@@ -44,9 +44,7 @@ const storage = {
     try {
       const r = await fetch(API, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(est),signal:AbortSignal.timeout(15000)});
       if (r.ok) return await r.json();
-      const txt = await r.text();
-      console.error("Save failed — status:",r.status,"body:",txt);
-    } catch(e) { console.error("Save error:",e.message); }
+    } catch(e) {}
     const all = JSON.parse(localStorage.getItem("brrg_estimates")||"[]");
     const idx = all.findIndex(e=>e.contractNumber===est.contractNumber);
     if(idx>=0) all[idx]=est; else all.push(est);
@@ -57,14 +55,14 @@ const storage = {
     try {
       const r = await fetch(API+"?action=list",{signal:AbortSignal.timeout(15000)});
       if (r.ok) return await r.json();
-    } catch(e) { console.error("List error:",e.message); }
+    } catch(e) {}
     return JSON.parse(localStorage.getItem("brrg_estimates")||"[]");
   },
   async get(contractNum) {
     try {
       const r = await fetch(`${API}?action=get&contract=${contractNum}`,{signal:AbortSignal.timeout(15000)});
       if (r.ok) return await r.json();
-    } catch(e) { console.error("Get error:",e.message); }
+    } catch(e) {}
     const all = JSON.parse(localStorage.getItem("brrg_estimates")||"[]");
     return all.find(e=>e.contractNumber===contractNum)||null;
   },
@@ -72,7 +70,7 @@ const storage = {
     try {
       const r = await fetch(API+"?action=counter",{signal:AbortSignal.timeout(15000)});
       if (r.ok) { const {count}=await r.json(); return `BRRG-EST-${new Date().getFullYear()}-${String(count).padStart(3,"0")}`; }
-    } catch(e) { console.error("Counter error:",e.message); }
+    } catch(e) {}
     const yr = new Date().getFullYear();
     let count=1;
     try { const s=JSON.parse(localStorage.getItem("brrg_est_counter")||"null"); if(s&&s.year===yr) count=s.count+1; } catch(e) {}
@@ -83,7 +81,7 @@ const storage = {
     try {
       const r = await fetch(API+"?action=inv_counter",{signal:AbortSignal.timeout(15000)});
       if (r.ok) { const {count}=await r.json(); return `BRRG-INV-${new Date().getFullYear()}-${String(count).padStart(3,"0")}`; }
-    } catch(e) { console.error("Inv counter error:",e.message); }
+    } catch(e) {}
     const yr = new Date().getFullYear();
     let count=1;
     try { const s=JSON.parse(localStorage.getItem("brrg_inv_counter")||"null"); if(s&&s.year===yr) count=s.count+1; } catch(e) {}
@@ -415,6 +413,8 @@ export default function BeshertBuilder() {
   const [jobType,      setJobType]     = useState("tearoff");
   const [paymentSplit, setSplit]       = useState("33/33/34");
   const [client,       setClient]      = useState({name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
+  const [lastName,     setLastName]    = useState("");
+  const [houseNum,     setHouseNum]    = useState("");
   const [preparedBy,   setPreparedBy]  = useState(DEFAULT_PREPARED_BY);
   const [pm,           setPm]          = useState(DEFAULT_PM);
   const [docDate,      setDocDate]     = useState(today());
@@ -478,8 +478,15 @@ export default function BeshertBuilder() {
   const handleSaveEstimate = async () => {
     setSaveStatus("saving");
     let cnum = contractNumber;
-    if(!cnum) { cnum = await storage.nextEstNum(); setContractNumber(cnum); }
-    const est = {contractNumber:cnum,dateCreated:today(),docDate,client,jobType,paymentSplit,preparedBy,pm,totalPrice:parsedTotal,priceDesc,optItems,scopeItems:scopeItems.filter(s=>s.on).map(s=>s.text),finalPageIds:finalPages.filter(fp=>fp.on).map(fp=>fp.id)};
+    if(!cnum) {
+      const base = await storage.nextEstNum();
+      const ln = lastName.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+      const hn = houseNum.trim().replace(/[^A-Z0-9]/gi,"");
+      const suffix = [ln,hn].filter(Boolean).join("-");
+      cnum = suffix ? `${base}-${suffix}` : base;
+      setContractNumber(cnum);
+    }
+    const est = {contractNumber:cnum,dateCreated:today(),docDate,client,lastName,houseNum,jobType,paymentSplit,preparedBy,pm,totalPrice:parsedTotal,priceDesc,optItems,scopeItems:scopeItems.filter(s=>s.on).map(s=>s.text),finalPageIds:finalPages.filter(fp=>fp.on).map(fp=>fp.id)};
     const res = await storage.save(est);
     setIsSaved(true);
     setSaveStatus(res.local ? "saved-local" : "saved");
@@ -493,6 +500,8 @@ export default function BeshertBuilder() {
     if(!est){setLoadEditError("Contract not found. Check the number and try again."); return;}
     const jt = est.jobType||"tearoff";
     setClient(est.client||{name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
+    setLastName(est.lastName||"");
+    setHouseNum(est.houseNum||"");
     setJobType(jt);
     setSplit(est.paymentSplit||"33/33/34");
     setPreparedBy(est.preparedBy||DEFAULT_PREPARED_BY);
@@ -542,6 +551,7 @@ export default function BeshertBuilder() {
     setJobType("tearoff"); setSplit("33/33/34");
     setClient({name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
     setPreparedBy(DEFAULT_PREPARED_BY); setPm(DEFAULT_PM); setDocDate(today());
+    setLastName(""); setHouseNum("");
     setScopeItems(JOBS.tearoff.scope.map((t,i)=>({id:i,text:t,on:true})));
     setFinalPages([...STANDARD_PROVISIONS.map(sp=>({id:sp.id,label:sp.title,on:true})),{id:"br1",label:"Buyer's Right to Cancel (Ohio Law)",on:true}]);
     setTotalPrice(""); setPriceDesc(""); setOptItems([]);
@@ -668,7 +678,24 @@ export default function BeshertBuilder() {
                   </div>
                 </div>
                 <div style={S.card}>
-                  <div style={{fontWeight:700,fontSize:14,marginBottom:14,color:PURPLE_DARK}}>Client Information</div>
+                  <div style={{fontWeight:700,fontSize:14,marginBottom:4,color:PURPLE_DARK}}>Client Information</div>
+                  <div style={{fontSize:11,color:"#888",marginBottom:14}}>Last Name and Property # are used to generate the contract number (e.g. BRRG-EST-2026-001-JOHNSON-4521)</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14,padding:"14px",background:PURPLE_LIGHT,borderRadius:8,border:`1px solid #d1c9e8`}}>
+                    <div>
+                      <label style={S.label}>Last Name (for contract #)</label>
+                      <input style={S.input} placeholder="e.g. Johnson" value={lastName} onChange={e=>setLastName(e.target.value)}/>
+                    </div>
+                    <div>
+                      <label style={S.label}>House / Property # (for contract #)</label>
+                      <input style={S.input} placeholder="e.g. 4521" value={houseNum} onChange={e=>setHouseNum(e.target.value)}/>
+                    </div>
+                    {(lastName||houseNum) && (
+                      <div style={{gridColumn:"1/-1",fontSize:12,color:PURPLE_DARK}}>
+                        Contract # preview: <strong>BRRG-EST-{new Date().getFullYear()}-###
+                        {lastName?`-${lastName.toUpperCase().replace(/[^A-Z0-9]/gi,"")}`:""}{houseNum?`-${houseNum}`:""}</strong>
+                      </div>
+                    )}
+                  </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                     {[["name","Full Name"],["title","Title"],["company","Organization / Company"],["address","Property Address"],["city","City"],["state","State"],["zip","ZIP"],["phone","Phone"],["email","Email"]].map(([k,lbl])=>(
                       <div key={k} style={k==="company"||k==="address"?{gridColumn:"1/-1"}:{}}>
