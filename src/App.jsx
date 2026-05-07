@@ -42,9 +42,11 @@ const API = "/.netlify/functions/estimates";
 const storage = {
   async save(est) {
     try {
-      const r = await fetch(API, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(est),signal:AbortSignal.timeout(6000)});
+      const r = await fetch(API, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(est),signal:AbortSignal.timeout(15000)});
       if (r.ok) return await r.json();
-    } catch(e) {}
+      const txt = await r.text();
+      console.error("Save failed — status:",r.status,"body:",txt);
+    } catch(e) { console.error("Save error:",e.message); }
     const all = JSON.parse(localStorage.getItem("brrg_estimates")||"[]");
     const idx = all.findIndex(e=>e.contractNumber===est.contractNumber);
     if(idx>=0) all[idx]=est; else all.push(est);
@@ -53,24 +55,24 @@ const storage = {
   },
   async list() {
     try {
-      const r = await fetch(API+"?action=list",{signal:AbortSignal.timeout(6000)});
+      const r = await fetch(API+"?action=list",{signal:AbortSignal.timeout(15000)});
       if (r.ok) return await r.json();
-    } catch(e) {}
+    } catch(e) { console.error("List error:",e.message); }
     return JSON.parse(localStorage.getItem("brrg_estimates")||"[]");
   },
   async get(contractNum) {
     try {
-      const r = await fetch(`${API}?action=get&contract=${contractNum}`,{signal:AbortSignal.timeout(6000)});
+      const r = await fetch(`${API}?action=get&contract=${contractNum}`,{signal:AbortSignal.timeout(15000)});
       if (r.ok) return await r.json();
-    } catch(e) {}
+    } catch(e) { console.error("Get error:",e.message); }
     const all = JSON.parse(localStorage.getItem("brrg_estimates")||"[]");
     return all.find(e=>e.contractNumber===contractNum)||null;
   },
   async nextEstNum() {
     try {
-      const r = await fetch(API+"?action=counter",{signal:AbortSignal.timeout(6000)});
+      const r = await fetch(API+"?action=counter",{signal:AbortSignal.timeout(15000)});
       if (r.ok) { const {count}=await r.json(); return `BRRG-EST-${new Date().getFullYear()}-${String(count).padStart(3,"0")}`; }
-    } catch(e) {}
+    } catch(e) { console.error("Counter error:",e.message); }
     const yr = new Date().getFullYear();
     let count=1;
     try { const s=JSON.parse(localStorage.getItem("brrg_est_counter")||"null"); if(s&&s.year===yr) count=s.count+1; } catch(e) {}
@@ -79,9 +81,9 @@ const storage = {
   },
   async nextInvNum() {
     try {
-      const r = await fetch(API+"?action=inv_counter",{signal:AbortSignal.timeout(6000)});
+      const r = await fetch(API+"?action=inv_counter",{signal:AbortSignal.timeout(15000)});
       if (r.ok) { const {count}=await r.json(); return `BRRG-INV-${new Date().getFullYear()}-${String(count).padStart(3,"0")}`; }
-    } catch(e) {}
+    } catch(e) { console.error("Inv counter error:",e.message); }
     const yr = new Date().getFullYear();
     let count=1;
     try { const s=JSON.parse(localStorage.getItem("brrg_inv_counter")||"null"); if(s&&s.year===yr) count=s.count+1; } catch(e) {}
