@@ -415,6 +415,7 @@ export default function BeshertBuilder() {
   const [client,       setClient]      = useState({name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
   const [lastName,     setLastName]    = useState("");
   const [houseNum,     setHouseNum]    = useState("");
+  const [camLink,      setCamLink]     = useState("");
   const [preparedBy,   setPreparedBy]  = useState(DEFAULT_PREPARED_BY);
   const [pm,           setPm]          = useState(DEFAULT_PM);
   const [docDate,      setDocDate]     = useState(today());
@@ -486,7 +487,7 @@ export default function BeshertBuilder() {
       cnum = suffix ? `${base}-${suffix}` : base;
       setContractNumber(cnum);
     }
-    const est = {contractNumber:cnum,dateCreated:today(),docDate,client,lastName,houseNum,jobType,paymentSplit,preparedBy,pm,totalPrice:parsedTotal,priceDesc,optItems,scopeItems:scopeItems.filter(s=>s.on).map(s=>s.text),finalPageIds:finalPages.filter(fp=>fp.on).map(fp=>fp.id)};
+    const est = {contractNumber:cnum,dateCreated:today(),docDate,client,lastName,houseNum,camLink,jobType,paymentSplit,preparedBy,pm,totalPrice:parsedTotal,priceDesc,optItems,scopeItems:scopeItems.filter(s=>s.on).map(s=>s.text),finalPageIds:finalPages.filter(fp=>fp.on).map(fp=>fp.id)};
     const res = await storage.save(est);
     setIsSaved(true);
     setSaveStatus(res.local ? "saved-local" : "saved");
@@ -502,6 +503,7 @@ export default function BeshertBuilder() {
     setClient(est.client||{name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
     setLastName(est.lastName||"");
     setHouseNum(est.houseNum||"");
+    setCamLink(est.camLink||"");
     setJobType(jt);
     setSplit(est.paymentSplit||"33/33/34");
     setPreparedBy(est.preparedBy||DEFAULT_PREPARED_BY);
@@ -550,8 +552,8 @@ export default function BeshertBuilder() {
     setStep(1); setShowPreview(false); setDocType("estimate");
     setJobType("tearoff"); setSplit("33/33/34");
     setClient({name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
+    setLastName(""); setHouseNum(""); setCamLink("");
     setPreparedBy(DEFAULT_PREPARED_BY); setPm(DEFAULT_PM); setDocDate(today());
-    setLastName(""); setHouseNum("");
     setScopeItems(JOBS.tearoff.scope.map((t,i)=>({id:i,text:t,on:true})));
     setFinalPages([...STANDARD_PROVISIONS.map(sp=>({id:sp.id,label:sp.title,on:true})),{id:"br1",label:"Buyer's Right to Cancel (Ohio Law)",on:true}]);
     setTotalPrice(""); setPriceDesc(""); setOptItems([]);
@@ -680,7 +682,9 @@ export default function BeshertBuilder() {
                 <div style={S.card}>
                   <div style={{fontWeight:700,fontSize:14,marginBottom:4,color:PURPLE_DARK}}>Client Information</div>
                   <div style={{fontSize:11,color:"#888",marginBottom:14}}>Last Name and Property # are used to generate the contract number (e.g. BRRG-EST-2026-001-JOHNSON-4521)</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14,padding:"14px",background:PURPLE_LIGHT,borderRadius:8,border:`1px solid #d1c9e8`}}>
+
+                  {/* Contract ID + CompanyCam */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:14,padding:"14px",background:PURPLE_LIGHT,borderRadius:8,border:`1px solid #d1c9e8`}}>
                     <div>
                       <label style={S.label}>Last Name (for contract #)</label>
                       <input style={S.input} placeholder="e.g. Johnson" value={lastName} onChange={e=>setLastName(e.target.value)}/>
@@ -689,13 +693,24 @@ export default function BeshertBuilder() {
                       <label style={S.label}>House / Property # (for contract #)</label>
                       <input style={S.input} placeholder="e.g. 4521" value={houseNum} onChange={e=>setHouseNum(e.target.value)}/>
                     </div>
+                    <div>
+                      <label style={S.label}>📷 CompanyCam Project Link</label>
+                      <input style={S.input} placeholder="https://app.companycam.com/..." value={camLink} onChange={e=>setCamLink(e.target.value)}/>
+                    </div>
                     {(lastName||houseNum) && (
                       <div style={{gridColumn:"1/-1",fontSize:12,color:PURPLE_DARK}}>
                         Contract # preview: <strong>BRRG-EST-{new Date().getFullYear()}-###
                         {lastName?`-${lastName.toUpperCase().replace(/[^A-Z0-9]/gi,"")}`:""}{houseNum?`-${houseNum}`:""}</strong>
                       </div>
                     )}
+                    {camLink && (
+                      <div style={{gridColumn:"1/-1",fontSize:12}}>
+                        <a href={camLink} target="_blank" rel="noreferrer" style={{color:HEADER_BG,fontWeight:600}}>📷 Open CompanyCam Project →</a>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Standard client fields */}
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                     {[["name","Full Name"],["title","Title"],["company","Organization / Company"],["address","Property Address"],["city","City"],["state","State"],["zip","ZIP"],["phone","Phone"],["email","Email"]].map(([k,lbl])=>(
                       <div key={k} style={k==="company"||k==="address"?{gridColumn:"1/-1"}:{}}>
