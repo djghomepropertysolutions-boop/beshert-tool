@@ -1233,7 +1233,7 @@ export default function BeshertBuilder() {
 
                   {/* Status */}
                   <div style={{marginBottom:20}}><label style={S.label}>Job Status</label><div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}>{STATUS_OPTIONS.map(s=>(<button key={s} onClick={()=>setStatus(s)} style={{...S.btn(status===s?STATUS_COLORS[s]||HEADER_BG:WHITE,status===s?WHITE:PURPLE_DARK),border:`2px solid ${status===s?STATUS_COLORS[s]||HEADER_BG:"#d1c9e8"}`,padding:"7px 16px",fontSize:12}}>{s}</button>))}</div></div>
-                  {/* Payment Structure (NEW) */
+                  {/* Payment Structure (NEW) */}
                   <div style={{marginBottom:20,padding:16,background:"#f8f7fb",borderRadius:8,border:`1px solid #d1c9e8`}}>
                     <div style={{fontWeight:700,fontSize:12,color:PURPLE_DARK,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Payment Structure</div>
                     <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
