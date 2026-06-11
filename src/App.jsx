@@ -882,7 +882,33 @@ export default function BeshertBuilder() {
   const sigCapture=()=>{const cv=sigCanvasRef.current;if(!cv)return;setSignature(cv.toDataURL("image/png"));setShowSigPad(false);};
   const validate=()=>{const e=[];if(!client.name.trim())e.push("Client name is required");if(!client.address.trim())e.push("Property address is required");if(baseParsedTotal<=0)e.push("Total price must be greater than $0");setValidationErrors(e);return e.length===0;};
   const loadDashboard=async()=>{setDashboardLoading(true);const list=await storage.list();setDashboardData(Array.isArray(list)?list:[]);setDashboardLoading(false);};
-  const handleSendEmail=async()=>{if(!clientEmail.trim()){alert("Please enter a valid email address.");return;}setEmailStatus("sending");try{const pLines=getPaymentLines(hasAddons?withTotal:parsedTotal,paymentStructure,paymentSplit,customPayments);const r=await fetch("/.netlify/functions/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:clientEmail,contractNumber,clientName:client.name,jobType:job.label,total:fmtAmt(hasAddons?withTotal:parsedTotal),date:docDate,docType,paymentLines:pLines})});setEmailStatus(r.ok?"sent":"error");if(r.ok)setTimeout(()=>{setShowEmailModal(false);setEmailStatus("idle");},3000);}catch(e){setEmailStatus("error");}};
+  const handleMailto=()=>{
+    if(!clientEmail.trim()){alert("Please enter a valid email address.");return;}
+    const typeLabel=docType==="invoice"?"Invoice":"Estimate";
+    const total=fmtAmt(hasAddons?withTotal:parsedTotal);
+    const pLines=getPaymentLines(hasAddons?withTotal:parsedTotal,paymentStructure,paymentSplit,customPayments);
+    const payText=pLines.length>0?'\n\nPayment Schedule:\n'+pLines.map(p=>`  ${p.label}: ${fmtAmt(p.amt)}`).join('\n'):'';
+    const subject=encodeURIComponent(`Your ${typeLabel} from Beshert Roofing — ${contractNumber}`);
+    const body=encodeURIComponent(
+`Dear ${client.name||'Valued Client'},
+
+Thank you for choosing Beshert Roofing Redevelopment Group. Please find your ${typeLabel.toLowerCase()} details below.
+
+${typeLabel} Number: ${contractNumber}
+Date: ${docDate}
+Service: ${job.label}
+Total: ${total}${payText}
+
+If you have any questions, please contact us at any time.
+
+Sincerely,
+Carlito
+Beshert Roofing Redevelopment Group
+Office: 216-326-7663  |  Mobile: 440-554-5332
+beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
+    window.open(`mailto:${clientEmail}?subject=${subject}&body=${body}`);
+    setShowEmailModal(false);
+  };
   const previewProps = {
     roofingLogo:ROOFING_LOGO, churchLogo:CHURCH_LOGO, docDate, docType,
     client, job, preparedBy, pm, scopeItems, finalPages,
@@ -1408,7 +1434,7 @@ export default function BeshertBuilder() {
                         {isPdfLoading ? "⏳ Generating…" : "⬇ Download PDF"}
                       </button>
                       <button style={S.btn(signature?"#27ae60":PURPLE_DARK)} onClick={()=>setShowSigPad(true)}>{signature?"✍ Re-Sign":"✍ Capture Signature"}</button>
-                      <button style={S.btn("#2980b9")} onClick={()=>{setClientEmail(client.email||"");setShowEmailModal(true);}}>✉ Email to Client</button>
+                      <button style={S.btn("#2980b9")} onClick={()=>{setClientEmail(client.email||clientEmail||"");setShowEmailModal(true);}}>✉ Email to Client</button>
                     </div>
                   </div>
 
@@ -1584,7 +1610,7 @@ export default function BeshertBuilder() {
         {showSigPad&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:500,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✍ Client Signature</div><div style={{fontSize:12,color:"#888",marginBottom:14}}>Sign below using mouse or finger. Appears on the printed document.</div><canvas ref={sigCanvasRef} width={440} height={150} style={{border:`2px solid ${PURPLE_LIGHT}`,borderRadius:8,cursor:"crosshair",background:"#fafafa",display:"block",width:"100%",touchAction:"none"}} onMouseDown={sigStart} onMouseMove={sigMove} onMouseUp={sigEnd} onMouseLeave={sigEnd} onTouchStart={sigStart} onTouchMove={sigMove} onTouchEnd={sigEnd}/><div style={{display:"flex",gap:10,marginTop:14,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={sigClear}>Clear</button><button style={S.btn("#888")} onClick={()=>setShowSigPad(false)}>Cancel</button><button style={S.btn(HEADER_BG)} onClick={sigCapture}>Save Signature</button></div></div></div>)}
 
         {/* EMAIL MODAL */}
-        {showEmailModal&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:480,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✉ Email {docType==="invoice"?"Invoice":"Estimate"} to Client</div><div style={{fontSize:12,color:"#888",marginBottom:16}}>A branded email with details will be sent to the address below.</div><div style={{marginBottom:14}}><label style={S.label}>Client Email Address</label><input style={S.input} type="email" placeholder="homeowner@email.com" value={clientEmail} onChange={e=>setClientEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSendEmail()}/></div><div style={{marginBottom:16,padding:"10px 14px",background:PURPLE_LIGHT,borderRadius:6,fontSize:12,color:PURPLE_DARK}}><strong>Subject:</strong> Your {docType==="invoice"?"Invoice":"Estimate"} from Beshert Roofing — {contractNumber||"(save first to generate #)"}</div>{emailStatus==="sending"&&<div style={{color:"#888",fontSize:13,marginBottom:12}}>⏳ Sending…</div>}{emailStatus==="sent"&&<div style={{color:"#27ae60",fontWeight:700,fontSize:13,marginBottom:12}}>✓ Email sent successfully!</div>}{emailStatus==="error"&&<div style={{color:"#c0392b",fontSize:13,marginBottom:12}}>⚠ Send failed. Check your Resend setup or try again.</div>}<div style={{display:"flex",gap:10,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={()=>{setShowEmailModal(false);setEmailStatus("idle");}}>Cancel</button><button style={S.btn(emailStatus==="sending"?"#888":"#2980b9")} onClick={handleSendEmail} disabled={emailStatus==="sending"}>{emailStatus==="sending"?"⏳ Sending…":"Send Email →"}</button></div></div></div>)}
+        {showEmailModal&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:480,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✉ Email {docType==="invoice"?"Invoice":"Estimate"} to Client</div><div style={{fontSize:12,color:"#888",marginBottom:16}}>A branded email with details will be sent to the address below.</div><div style={{marginBottom:14}}><label style={S.label}>Client Email Address</label><input style={S.input} type="email" placeholder="homeowner@email.com" value={clientEmail} onChange={e=>setClientEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSendEmail()}/></div><div style={{marginBottom:16,padding:"10px 14px",background:PURPLE_LIGHT,borderRadius:6,fontSize:12,color:PURPLE_DARK}}><strong>Subject:</strong> Your {docType==="invoice"?"Invoice":"Estimate"} from Beshert Roofing — {contractNumber||"(save first to generate #)"}</div><div style={{fontSize:12,color:"#888",marginBottom:12,padding:"8px 12px",background:"#f8f9fb",borderRadius:6}}>📱 This will open your email app with everything pre-filled. Just tap Send.</div><div style={{display:"flex",gap:10,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={()=>setShowEmailModal(false)}>Cancel</button><button style={S.btn("#2980b9")} onClick={handleMailto}>Open Email App →</button></div></div></div>)}
 
       </div>
     </div>
