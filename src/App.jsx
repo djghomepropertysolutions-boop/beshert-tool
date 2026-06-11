@@ -944,7 +944,7 @@ export default function BeshertBuilder() {
           </div>
         )}
 
-        {/* ══ PROPOSAL MODE ══ */
+        {/* ══ PROPOSAL MODE ══ */}
         {mode==="proposal" && (
           <>
             {!showPreview && (
