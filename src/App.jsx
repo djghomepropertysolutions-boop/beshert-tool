@@ -513,6 +513,56 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
 }
 
 // ═════════════════════ MAIN COMPONENT ════════════════════════════════════════
+function BillingInvoicePreview({roofingLogo,preparedBy,pm,bInvNum,bInvDate,bInvDueDate,bInvClient,bInvLines,bInvTerms,bInvMethods,bInvStatus}) {
+  const subtotal = bInvLines.reduce((sum,l)=>sum+(parseFloat(String(l.amt).replace(/[^0-9.]/g,""))||0),0);
+  const fmtA = n => "$"+((parseFloat(String(n).replace(/[^0-9.]/g,""))||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}));
+  return (
+    <div id="print-area" style={{fontFamily:"Georgia,serif",maxWidth:780,margin:"0 auto",background:"#fff",position:"relative",fontSize:13,border:"1px solid #e2e8f0"}}>
+      {bInvStatus==="Paid"&&(<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",zIndex:200,overflow:"hidden"}}><div style={{border:"7px solid rgba(21,156,89,0.65)",color:"rgba(21,156,89,0.65)",fontSize:80,fontWeight:900,transform:"rotate(-32deg)",letterSpacing:6,padding:"8px 18px",borderRadius:10,lineHeight:1}}>PAID</div></div>)}
+      <div style={{textAlign:"center",padding:"24px 20px 16px",borderBottom:"3px solid #1a2744"}}>
+        {roofingLogo&&<img src={roofingLogo} alt="Beshert" style={{height:80,objectFit:"contain",display:"block",margin:"0 auto 10px"}}/>}
+        <div style={{fontWeight:700,fontSize:15,color:"#1a2744",letterSpacing:1}}>THE BESHERT GROUP</div>
+        <div style={{fontSize:12,color:"#444",marginTop:2}}>DBA: MAGNANIMOUS LIFE, 501(C)3</div>
+        <div style={{fontSize:11,color:"#666",marginTop:2}}>"A TRUSTED CHOICE SINCE 2005"</div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",padding:"16px 24px",borderBottom:"1px solid #e2e8f0"}}>
+        <div style={{fontSize:12,lineHeight:1.8,color:"#333"}}><div>Office: 216-326-7663</div><div>Mobile: 440-554-5332</div><div>Email: beshert@thebeshertgroup.com</div><div>Website: www.thebeshertgroup.com</div></div>
+        <div style={{textAlign:"right",fontSize:12,lineHeight:1.8,color:"#333"}}><div><strong>Prepared by:</strong> {preparedBy}</div><div><strong>Project Manager:</strong> {pm}</div></div>
+      </div>
+      <div style={{padding:"16px 24px",borderBottom:"1px solid #e2e8f0"}}>
+        <div style={{display:"grid",gridTemplateColumns:"160px 1fr",gap:4}}>
+          <div style={{fontWeight:700,fontSize:13}}>Invoice For:</div>
+          <div style={{fontSize:12,lineHeight:1.9}}><div><strong>Name:</strong> {bInvClient.name}</div><div><strong>Address:</strong> {bInvClient.address}</div><div><strong>City, State, ZIP:</strong> {bInvClient.city}</div></div>
+        </div>
+      </div>
+      <div style={{padding:"16px 24px",borderBottom:"1px solid #e2e8f0"}}>
+        <div style={{fontWeight:700,fontSize:12,marginBottom:8,textTransform:"uppercase",letterSpacing:1,color:"#1a2744"}}>Invoice Details</div>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead><tr style={{background:"#1a2744"}}>{["Invoice Number","Invoice Date","Due Date"].map(h=><th key={h} style={{padding:"8px 12px",textAlign:"left",color:"rgba(255,255,255,0.8)",fontWeight:600}}>{h}</th>)}</tr></thead>
+          <tbody><tr style={{background:"#f8f9fb"}}><td style={{padding:"9px 12px",fontWeight:700,color:"#1a2744",fontFamily:"monospace"}}>{bInvNum}</td><td style={{padding:"9px 12px"}}>{bInvDate}</td><td style={{padding:"9px 12px"}}>{bInvDueDate}</td></tr></tbody>
+        </table>
+      </div>
+      <div style={{padding:"16px 24px",borderBottom:"1px solid #e2e8f0"}}>
+        <div style={{fontWeight:700,fontSize:12,marginBottom:8,textTransform:"uppercase",letterSpacing:1,color:"#1a2744"}}>Description of Services</div>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead><tr style={{background:"#1a2744"}}><th style={{padding:"8px 12px",textAlign:"left",color:"rgba(255,255,255,0.8)",fontWeight:600,width:"75%"}}>Description</th><th style={{padding:"8px 12px",textAlign:"right",color:"rgba(255,255,255,0.8)",fontWeight:600}}>Amount</th></tr></thead>
+          <tbody>{bInvLines.filter(l=>l.desc||l.amt).map((l,i)=><tr key={l.id} style={{background:i%2===0?"#fff":"#f8f9fb",borderBottom:"1px solid #e2e8f0"}}><td style={{padding:"9px 12px"}}>{l.desc}</td><td style={{padding:"9px 12px",textAlign:"right",fontWeight:500}}>{l.amt?fmtA(l.amt):""}</td></tr>)}</tbody>
+        </table>
+      </div>
+      <div style={{padding:"16px 24px",borderBottom:"1px solid #e2e8f0"}}>
+        <div style={{fontWeight:700,fontSize:12,marginBottom:8,textTransform:"uppercase",letterSpacing:1,color:"#1a2744"}}>Total Due</div>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead><tr style={{background:"#1a2744"}}>{["Subtotal","Total Due"].map(h=><th key={h} style={{padding:"8px 12px",textAlign:"right",color:"rgba(255,255,255,0.8)",fontWeight:600}}>{h}</th>)}</tr></thead>
+          <tbody><tr style={{background:"#ece9f4"}}><td style={{padding:"10px 12px",textAlign:"right",fontWeight:700,fontSize:14}}>{fmtA(subtotal)}</td><td style={{padding:"10px 12px",textAlign:"right",fontWeight:700,fontSize:15,color:"#1a2744"}}>{fmtA(subtotal)}</td></tr></tbody>
+        </table>
+      </div>
+      <div style={{padding:"14px 24px",borderBottom:"1px solid #e2e8f0",fontSize:12,lineHeight:1.8}}><div><strong>Payment Terms:</strong> {bInvTerms}</div><div><strong>Accepted Payment Methods:</strong> {bInvMethods}</div></div>
+      <div style={{padding:"14px 24px",fontSize:12,color:"#444",lineHeight:1.7,borderBottom:"1px solid #e2e8f0"}}>Thank you for your business and prompt payment. Please include the invoice number with all payments for proper credit.</div>
+      <div style={{textAlign:"center",padding:"16px 24px",borderTop:"3px solid #1a2744"}}><div style={{fontWeight:700,fontSize:14,color:"#1a2744"}}>The Beshert Group</div><div style={{fontSize:12,color:"#888",marginTop:3,letterSpacing:1}}>Excellence. Integrity. Commitment.</div></div>
+    </div>
+  );
+}
+
 export default function BeshertBuilder() {
   // ── Mode & Step ──
   const [mode,         setMode]        = useState("proposal");
@@ -559,6 +609,20 @@ export default function BeshertBuilder() {
 
   // ── NEW: Add-On Library ──
   const [addonLibrary, setAddonLibrary] = useState([]);
+
+  // ── V12 Billing Invoice State ──
+  const today = new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+  const [bInvNum,    setBInvNum]    = useState("");
+  const [bInvDate,   setBInvDate]   = useState(today);
+  const [bInvDueDate,setBInvDueDate]= useState("Due upon receipt");
+  const [bInvClient, setBInvClient] = useState({name:"",address:"",city:""});
+  const [bInvLines,  setBInvLines]  = useState([{id:1,desc:"",amt:""}]);
+  const [bInvTerms,  setBInvTerms]  = useState("Due upon receipt.");
+  const [bInvMethods,setBInvMethods]= useState("Check, ACH, or other approved method.");
+  const [bInvContract,setBInvContract]=useState("");
+  const [bInvPreview,setBInvPreview]= useState(false);
+  const [bInvStatus, setBInvStatus] = useState("Invoiced");
+  const [updatingStatusId,setUpdatingStatusId]=useState(null);
 
   // ── V11 New State ──
   const [status,setStatus]=useState("Pending");
@@ -909,6 +973,33 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     window.open(`mailto:${clientEmail}?subject=${subject}&body=${body}`);
     setShowEmailModal(false);
   };
+  const genBillingNum = () => {
+    const yr=new Date().getFullYear();
+    const key=`brrg_billing_inv_${yr}`;
+    const n=parseInt(localStorage.getItem(key)||"0")+1;
+    localStorage.setItem(key,String(n));
+    return `BRRG-INV-${yr}-${String(n).padStart(3,"0")}`;
+  };
+  const loadBillingFromContract = async (contractNum) => {
+    if(!contractNum) return;
+    const est = await storage.get(contractNum);
+    if(!est){ alert("Contract not found."); return; }
+    setBInvClient({name:est.client?.name||"",address:est.client?.address||"",city:est.client?.city||""});
+    const lines=[];
+    if(est.jobType) lines.push({id:Date.now(),desc:JOBS[est.jobType]?.label||est.jobType,amt:String(est.totalPrice||"")});
+    (est.additionalJobs||[]).forEach((j,i)=>lines.push({id:Date.now()+i+1,desc:j.desc||JOBS[j.type]?.label||j.type||"",amt:String(j.price||"")}));
+    setBInvLines(lines.length>0?lines:[{id:1,desc:"",amt:""}]);
+    setBInvContract(contractNum);
+  };
+  const addBInvLine    = () => setBInvLines(p=>[...p,{id:Date.now(),desc:"",amt:""}]);
+  const removeBInvLine = id => setBInvLines(p=>p.length>1?p.filter(l=>l.id!==id):p);
+  const updateBInvLine = (id,field,val) => setBInvLines(p=>p.map(l=>l.id===id?{...l,[field]:val}:l));
+  const resetBillingInv = () => { const t=new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}); setBInvNum(""); setBInvDate(t); setBInvDueDate("Due upon receipt"); setBInvClient({name:"",address:"",city:""}); setBInvLines([{id:1,desc:"",amt:""}]); setBInvTerms("Due upon receipt."); setBInvMethods("Check, ACH, or other approved method."); setBInvContract(""); setBInvPreview(false); setBInvStatus("Invoiced"); };
+  const handleUpdateStatus = async (contractNum, newStatus) => {
+    const est = await storage.get(contractNum);
+    if(est){ est.status=newStatus; await storage.save(est); setDashboardData(prev=>prev.map(e=>e.contractNumber===contractNum?{...e,status:newStatus}:e)); }
+  };
+
   const previewProps = {
     roofingLogo:ROOFING_LOGO, churchLogo:CHURCH_LOGO, docDate, docType,
     client, job, preparedBy, pm, scopeItems, finalPages,
@@ -965,7 +1056,11 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
               ?<div style={{textAlign:"center",padding:40,color:"#888",fontSize:14}}>⏳ Loading estimates…</div>
               :dashboardData.length===0
                 ?<div style={{...S.card,textAlign:"center",padding:48}}><div style={{fontSize:32,marginBottom:12}}>📄</div><div style={{fontSize:15,fontWeight:700,color:PURPLE_DARK,marginBottom:6}}>No estimates yet</div><div style={{fontSize:13,color:"#888",marginBottom:20}}>Create your first estimate to see it here.</div><button style={S.btn(HEADER_BG)} onClick={()=>setAppMode("form")}>+ Create First Estimate</button></div>
-                :<div style={{...S.card,padding:0,overflow:"hidden"}}><div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12.5}}><thead><tr style={{background:NAVY}}>{["Contract #","Client","Date","Job","Total","Status","Action"].map(h=>(<th key={h} style={{padding:"10px 14px",textAlign:"left",color:"rgba(255,255,255,0.7)",fontWeight:600,fontSize:11,textTransform:"uppercase",letterSpacing:0.5,whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead><tbody>{dashboardData.filter(e=>dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer"}} onClick={()=>{handleLoadForEdit(e.contractNumber);setAppMode("form");}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{JOBS[e.jobType]?.icon||"📋"} {JOBS[e.jobType]?.label||"—"}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"10px 14px"}}><span style={{background:STATUS_COLORS[e.status||"Pending"]||"#888",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:12,whiteSpace:"nowrap"}}>{e.status||"Pending"}</span></td><td style={{padding:"10px 14px"}}><button onClick={ev=>{ev.stopPropagation();handleLoadForEdit(e.contractNumber);setAppMode("form");}} style={{...S.btn(HEADER_BG),fontSize:11,padding:"4px 12px"}}>Open</button></td></tr>))}</tbody></table></div></div>
+                :<div style={{...S.card,padding:0,overflow:"hidden"}}><div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12.5}}><thead><tr style={{background:NAVY}}>{["Contract #","Client","Date","Job","Total","Status"].map(h=>(<th key={h} style={{padding:"10px 14px",textAlign:"left",color:"rgba(255,255,255,0.7)",fontWeight:600,fontSize:11,textTransform:"uppercase",letterSpacing:0.5,whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead><tbody>{dashboardData.filter(e=>dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{handleLoadForEdit(e.contractNumber);setAppMode("form");}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{JOBS[e.jobType]?.icon||"📋"} {JOBS[e.jobType]?.label||"—"}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px"}} onClick={ev=>ev.stopPropagation()}>
+                                  <select value={e.status||"Pending"} onChange={ev=>{ev.stopPropagation();handleUpdateStatus(e.contractNumber,ev.target.value);}} style={{background:STATUS_COLORS[e.status||"Pending"]||"#888",color:"#fff",border:"none",borderRadius:12,padding:"3px 9px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif"}}>
+                                    {STATUS_OPTIONS.map(s=><option key={s} value={s} style={{background:"#fff",color:"#333"}}>{s}</option>)}
+                                  </select>
+                                </td></tr>))}</tbody></table></div></div>
             }
           </div>
         )}
@@ -1469,33 +1564,83 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
         {/* ══ INVOICE MODE ══ */}
         {mode==="invoice" && (
           <>
-            {!invStarted ? (
-              <div style={S.card}>
-                <div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:20}}>Create Invoice</div>
-                {loadError && <div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:6,padding:"10px 14px",fontSize:12,color:"#c0392b",marginBottom:16}}>{loadError}</div>}
-                <div style={{marginBottom:20}}>
-                  <label style={S.label}>Load from Saved Estimate</label>
-                  {recentEsts.length > 0 && (
-                    <select style={{...S.input,marginBottom:10}} onChange={e=>e.target.value&&handleLoadEstimate(e.target.value)} defaultValue="">
-                      <option value="">— Select a recent estimate —</option>
-                      {recentEsts.slice().reverse().map(e=>(
-                        <option key={e.contractNumber} value={e.contractNumber}>{e.contractNumber} · {e.client?.name||"No name"} · {e.dateCreated}</option>
-                      ))}
-                    </select>
-                  )}
-                  <div style={{display:"flex",gap:10}}>
-                    <input style={{...S.input,flex:1}} placeholder="Or enter contract number…" value={loadInput} onChange={e=>setLoadInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLoadEstimate()}/>
-                    <button style={S.btn(HEADER_BG)} onClick={()=>handleLoadEstimate()}>Load</button>
-                  </div>
-                </div>
-                <div style={{borderTop:`1px solid ${PURPLE_LIGHT}`,paddingTop:16}}>
-                  <label style={S.label}>Or start a blank invoice</label>
-                  <button style={S.btn(PURPLE_DARK)} onClick={async()=>{const n=await storage.nextInvNum();setInvNum(n);setInvStarted(true);}}>Start Blank Invoice</button>
-                </div>
-              </div>
-            ) : (
+            {!bInvPreview ? (
               <>
                 <div style={S.card}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:10}}>
+                    <div><div style={{fontWeight:700,fontSize:18,color:PURPLE_DARK}}>🧾 Billing Invoice</div><div style={{fontSize:12,color:"#888",marginTop:2}}>For collections and receipts</div></div>
+                    <button style={S.btn("#888")} onClick={resetBillingInv}>+ New Blank Invoice</button>
+                  </div>
+                  <div style={{padding:16,background:"#f8f7fb",borderRadius:8,border:`1px solid #d1c9e8`,marginBottom:20}}>
+                    <div style={{fontWeight:700,fontSize:12,color:PURPLE_DARK,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Load from Saved Estimate (optional)</div>
+                    <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                      <select style={{...S.input,flex:1}} value={bInvContract} onChange={e=>{setBInvContract(e.target.value);if(e.target.value)loadBillingFromContract(e.target.value);}}>
+                        <option value="">— Select a contract to auto-fill —</option>
+                        {dashboardData.slice().reverse().map(e=>(<option key={e.contractNumber} value={e.contractNumber}>{e.contractNumber} · {e.client?.name||"No name"}</option>))}
+                      </select>
+                      {bInvContract&&<button style={S.btn("#888")} onClick={()=>{setBInvContract("");setBInvClient({name:"",address:"",city:""});setBInvLines([{id:1,desc:"",amt:""}]);}}>Clear</button>}
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:16}}>
+                    <div><label style={S.label}>Invoice Number</label><div style={{display:"flex",gap:8}}><input style={{...S.input,flex:1}} value={bInvNum} onChange={e=>setBInvNum(e.target.value)} placeholder="Auto-generate"/><button style={{...S.btn(HEADER_BG),padding:"8px 10px",fontSize:11}} onClick={()=>setBInvNum(genBillingNum())}>Gen</button></div></div>
+                    <div><label style={S.label}>Invoice Date</label><input style={S.input} value={bInvDate} onChange={e=>setBInvDate(e.target.value)}/></div>
+                    <div><label style={S.label}>Due Date</label><input style={S.input} placeholder="e.g. Due upon receipt" value={bInvDueDate} onChange={e=>setBInvDueDate(e.target.value)}/></div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:16}}>
+                    <div><label style={S.label}>Client Name</label><input style={S.input} value={bInvClient.name} onChange={e=>setBInvClient(p=>({...p,name:e.target.value}))}/></div>
+                    <div><label style={S.label}>Property Address</label><input style={S.input} value={bInvClient.address} onChange={e=>setBInvClient(p=>({...p,address:e.target.value}))}/></div>
+                    <div><label style={S.label}>City, State, ZIP</label><input style={S.input} value={bInvClient.city} onChange={e=>setBInvClient(p=>({...p,city:e.target.value}))}/></div>
+                  </div>
+                </div>
+                <div style={S.card}>
+                  <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK,marginBottom:14}}>Description of Services</div>
+                  <div style={{marginBottom:8,display:"grid",gridTemplateColumns:"1fr 160px 40px",gap:8}}>
+                    <div style={{fontSize:11,color:"#888",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Description</div>
+                    <div style={{fontSize:11,color:"#888",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Amount</div>
+                    <div/>
+                  </div>
+                  {bInvLines.map((l)=>(
+                    <div key={l.id} style={{display:"grid",gridTemplateColumns:"1fr 160px 40px",gap:8,marginBottom:8,alignItems:"center"}}>
+                      <input style={S.input} placeholder="e.g. Tear-Off and Replacement" value={l.desc} onChange={e=>updateBInvLine(l.id,"desc",e.target.value)}/>
+                      <div style={{display:"flex",alignItems:"center"}}>
+                        <span style={{background:PURPLE_LIGHT,border:"1.5px solid #d1c9e8",borderRight:"none",borderRadius:"6px 0 0 6px",padding:"9px 10px",fontSize:12,fontWeight:700,color:PURPLE_DARK}}>$</span>
+                        <input style={{...S.input,borderRadius:"0 6px 6px 0"}} placeholder="0.00" value={l.amt} onChange={e=>updateBInvLine(l.id,"amt",e.target.value)}/>
+                      </div>
+                      <button onClick={()=>removeBInvLine(l.id)} style={{background:"none",border:"none",color:bInvLines.length>1?"#c0392b":"#ddd",cursor:bInvLines.length>1?"pointer":"default",fontSize:18,fontWeight:700}}>✕</button>
+                    </div>
+                  ))}
+                  <button style={{...S.btn(PURPLE_LIGHT,PURPLE_DARK),border:`1px solid ${PURPLE}33`,fontSize:12,marginTop:4}} onClick={addBInvLine}>+ Add Line Item</button>
+                  {bInvLines.some(l=>l.amt)&&(<div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}><div style={{background:NAVY,color:WHITE,padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:700}}>Total Due: {(()=>{const t=bInvLines.reduce((s,l)=>s+(parseFloat(String(l.amt).replace(/[^0-9.]/g,""))||0),0);return "$"+t.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});})()}</div></div>)}
+                </div>
+                <div style={S.card}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+                    <div><label style={S.label}>Payment Terms</label><input style={S.input} value={bInvTerms} onChange={e=>setBInvTerms(e.target.value)}/></div>
+                    <div><label style={S.label}>Accepted Payment Methods</label><input style={S.input} value={bInvMethods} onChange={e=>setBInvMethods(e.target.value)}/></div>
+                  </div>
+                  <div><label style={S.label}>Invoice Status</label><div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}>{STATUS_OPTIONS.map(s=>(<button key={s} onClick={()=>setBInvStatus(s)} style={{...S.btn(bInvStatus===s?STATUS_COLORS[s]||HEADER_BG:WHITE,bInvStatus===s?WHITE:PURPLE_DARK),border:`2px solid ${bInvStatus===s?STATUS_COLORS[s]||HEADER_BG:"#d1c9e8"}`,padding:"6px 14px",fontSize:12}}>{s}</button>))}</div></div>
+                </div>
+                <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                  <button style={S.btn(HEADER_BG)} onClick={()=>{if(!bInvNum)setBInvNum(genBillingNum());setBInvPreview(true);}}>Preview Invoice →</button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Billing Invoice Preview */}
+                <div style={{...S.card,padding:0,overflow:"hidden"}}>
+                  <div style={{background:PURPLE_LIGHT,padding:"10px 20px",fontSize:12,color:PURPLE_DARK,fontWeight:700,borderBottom:`1px solid #d1c9e8`}}>
+                    ↓ Invoice Preview — scroll down to view
+                  </div>
+                  <BillingInvoicePreview roofingLogo={ROOFING_LOGO} preparedBy={preparedBy} pm={pm} bInvNum={bInvNum} bInvDate={bInvDate} bInvDueDate={bInvDueDate} bInvClient={bInvClient} bInvLines={bInvLines} bInvTerms={bInvTerms} bInvMethods={bInvMethods} bInvStatus={bInvStatus}/>
+                </div>
+                <div style={{display:"flex",gap:10,justifyContent:"space-between",flexWrap:"wrap"}}>
+                  <button style={S.btn(PURPLE_DARK)} onClick={()=>setBInvPreview(false)}>← Edit Invoice</button>
+                  <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                    <button style={S.btn(PURPLE_DARK)} onClick={()=>{setDocType("invoice");window.print();}}>🖨 Print</button>
+                    <button style={S.btn(isPdfLoading?"#888":PURPLE_DARK)} onClick={handleDownloadPDF} disabled={isPdfLoading}>{isPdfLoading?"⏳ Generating…":"⬇ Download PDF"}</button>
+                    <button style={S.btn("#2980b9")} onClick={()=>{setClientEmail(bInvClient.email||clientEmail||"");setShowEmailModal(true);}}>✉ Email to Client</button>
+                  </div>
+                </div>
+                <div style={{...S.card,display:"none"}} id="OLD_INV_PLACEHOLDER">
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                     <div>
                       <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK}}>Invoice #{invNum}</div>
