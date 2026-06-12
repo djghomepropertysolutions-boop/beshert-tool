@@ -236,7 +236,7 @@ function Watermark({churchLogo}) {
   if(!churchLogo) return null;
   return (
     <div style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",overflow:"hidden",zIndex:0}}>
-      <img src={churchLogo} alt="" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%) rotate(-30deg)",width:"55%",opacity:0.06,objectFit:"contain"}}/>
+      <img src={churchLogo} alt="" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%) rotate(-30deg)",width:"60%",opacity:0.09,objectFit:"contain"}}/>
     </div>
   );
 }
@@ -254,7 +254,7 @@ function ContractBadge({contractNumber,isRevised}) {
 }
 
 // ── ProposalPreview (MODIFIED) ────────────────────────────────────────────────
-function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,preparedBy,pm,scopeItems,finalPages,totalPrice,priceDesc,optItems,paymentSplit,contractNumber,linkedContract,isRevised,additionalJobs,paymentStructure,customPayments,signature,status,measurements,materials,isInsuranceJob,insFields}) {
+function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,preparedBy,pm,scopeItems,finalPages,totalPrice,priceDesc,optItems,paymentSplit,contractNumber,linkedContract,isRevised,additionalJobs,paymentStructure,customPayments,signature,signatureTimestamp,signatureIP,status,measurements,materials,isInsuranceJob,insFields}) {
   const addJobsTotal = (additionalJobs||[]).reduce((s,j)=>s+(parseFloat(String(j.price||"0").replace(/[^0-9.]/g,""))||0),0);
   const grandTotal   = totalPrice + addJobsTotal;
   const addonTotal   = (optItems||[]).filter(o=>o.includeInTotal&&parseFloat(o.price)>0).reduce((s,o)=>s+parseFloat(o.price),0);
@@ -514,19 +514,24 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
 
         {/* Signature */}
         <div style={{background:WHITE,padding:"16px 20px",borderBottom:`2px solid ${PURPLE_LIGHT}`}}>
-          <div style={{fontWeight:700,fontSize:11,color:PURPLE_DARK,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>Acceptance & Authorization</div>
+          <div style={{fontWeight:700,fontSize:11,color:PURPLE_DARK,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Acceptance & Authorization</div>
+          <div style={{fontSize:11.5,color:"#555",marginBottom:14,fontStyle:"italic",lineHeight:1.6}}>By signing below, I confirm I have read and agree to the full scope of work, pricing, and payment terms described in this estimate. I authorize Beshert Roofing Redevelopment Group to perform the work.</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:30}}>
             <div>
-                {signature?<img src={signature} alt="Client Signature" style={{height:50,maxWidth:"100%",objectFit:"contain",marginBottom:4,display:"block"}}/>:<div style={{borderBottom:"1.5px solid #999",marginBottom:4,height:50}}/>}
-                <div style={{fontSize:11,color:"#666"}}>Client Signature</div>
-                <div style={{borderBottom:"1.5px solid #ccc",marginTop:14,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Client Name (Print)</div>
-                <div style={{borderBottom:"1.5px solid #ccc",marginTop:10,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Date</div>
-              </div>
-              <div>
-                <div style={{borderBottom:"1.5px solid #999",marginBottom:4,height:50}}/><div style={{fontSize:11,color:"#666"}}>Authorized Contractor Signature</div>
-                <div style={{borderBottom:"1.5px solid #ccc",marginTop:14,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Contractor Name (Print)</div>
-                <div style={{borderBottom:"1.5px solid #ccc",marginTop:10,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Date</div>
-              </div>
+              {signature
+                ?<img src={signature} alt="Client Signature" style={{height:50,maxWidth:"100%",objectFit:"contain",marginBottom:4,display:"block"}}/>
+                :<div style={{borderBottom:"1.5px solid #999",marginBottom:4,height:50,display:"flex",alignItems:"flex-end"}}><span style={{fontSize:10,color:"#ccc",marginBottom:2}}>Signature required</span></div>}
+              <div style={{fontSize:11,color:"#666"}}>Client Signature</div>
+              {signatureTimestamp&&<div style={{fontSize:9.5,color:"#888",marginTop:3,fontStyle:"italic"}}>✓ Digitally signed: {signatureTimestamp}</div>}
+              {signatureIP&&<div style={{fontSize:9,color:"#aaa"}}>IP: {signatureIP}</div>}
+              <div style={{borderBottom:"1.5px solid #ccc",marginTop:14,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Client Name (Print)</div>
+              <div style={{borderBottom:"1.5px solid #ccc",marginTop:10,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Date</div>
+            </div>
+            <div>
+              <div style={{borderBottom:"1.5px solid #999",marginBottom:4,height:50}}/><div style={{fontSize:11,color:"#666"}}>Authorized Contractor Signature</div>
+              <div style={{borderBottom:"1.5px solid #ccc",marginTop:14,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Contractor Name (Print)</div>
+              <div style={{borderBottom:"1.5px solid #ccc",marginTop:10,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Date</div>
+            </div>
           </div>
         </div>
 
@@ -544,6 +549,89 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
 }
 
 // ═════════════════════ MAIN COMPONENT ════════════════════════════════════════
+function WorkAuthPreview({roofingLogo,churchLogo,client,job,contractNumber,docDate,preparedBy,totalPrice,paymentSplit,signature,signatureTimestamp,signatureIP,scopeItems}) {
+  return (
+    <div id="work-auth-area" style={{maxWidth:820,margin:"0 auto",fontFamily:"Georgia,serif",fontSize:13,color:"#1a1a2a",background:"#fff",position:"relative"}}>
+      <style>{`@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}#work-auth-area{max-width:100%;}}`}</style>
+      {/* Header */}
+      <div style={{background:"#1a2744",color:"#fff",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderRadius:"6px 6px 0 0"}}>
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          {roofingLogo&&<img src={roofingLogo} alt="" style={{height:48,objectFit:"contain",background:"#fff",borderRadius:4,padding:3}}/>}
+          <div>
+            <div style={{fontWeight:700,fontSize:13,letterSpacing:1}}>BESHERT ROOFING REDEVELOPMENT GROUP</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",letterSpacing:2}}>MAGNANIMOUS LIFE · 501(C)(3) · EST. 2005</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",marginTop:2}}>📞 (216) 326-ROOF · beshert@thebeshertgroup.com</div>
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:16,fontWeight:700,letterSpacing:2,color:"#C9A84C"}}>WORK AUTHORIZATION</div>
+          <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",marginTop:2}}>{docDate}</div>
+          {contractNumber&&<div style={{marginTop:4,background:"rgba(255,255,255,0.15)",borderRadius:4,padding:"2px 8px",fontSize:10,fontFamily:"monospace",color:"#C9A84C"}}>{contractNumber}</div>}
+        </div>
+      </div>
+      {/* Property + Job */}
+      <div style={{background:"#ece9f4",padding:"14px 20px",borderBottom:"2px solid #8b7cb4"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:10,color:"#8b7cb4",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Property & Homeowner</div>
+            <div style={{fontWeight:700}}>{client?.name||"—"}</div>
+            <div style={{fontSize:12}}>{client?.address}</div>
+            <div style={{fontSize:12}}>{client?.city}{client?.state?`, ${client.state}`:""}{client?.zip?` ${client.zip}`:""}</div>
+            {client?.phone&&<div style={{fontSize:12}}>📞 {client.phone}</div>}
+          </div>
+          <div>
+            <div style={{fontWeight:700,fontSize:10,color:"#8b7cb4",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Authorized Work</div>
+            <div style={{fontWeight:700}}>{job?.label||"—"}</div>
+            <div style={{fontSize:12,color:"#555",marginTop:4}}>{(scopeItems||[]).filter(s=>s.on).slice(0,3).map(s=>s.text).join(" · ")}{(scopeItems||[]).filter(s=>s.on).length>3?" · (+ more)":""}</div>
+            <div style={{fontSize:12,fontWeight:700,color:"#1a2744",marginTop:6}}>Agreed Price: {new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(parseFloat(String(totalPrice||"0").replace(/[^0-9.]/g,""))||0)}</div>
+          </div>
+        </div>
+      </div>
+      {/* Authorization language */}
+      <div style={{padding:"16px 20px",borderBottom:"1px solid #e2e8f0"}}>
+        <div style={{borderLeft:"4px solid #8b7cb4",paddingLeft:12,color:"#1a2744",fontWeight:700,fontSize:13,letterSpacing:1,marginBottom:12}}>AUTHORIZATION</div>
+        <div style={{fontSize:12.5,lineHeight:1.8,color:"#333"}}>
+          I, <strong>{client?.name||"_______________________"}</strong>, authorize Beshert Roofing Redevelopment Group to begin the work described above at the property listed. By signing this document, I agree that:
+        </div>
+        <ul style={{fontSize:12,color:"#444",paddingLeft:20,marginTop:10,lineHeight:2}}>
+          <li>Beshert and its crew have my permission to access the property and begin work on or around the agreed start date.</li>
+          <li>Payment will be made per the schedule described in the referenced estimate ({contractNumber||"—"}).</li>
+          <li>Any changes to the scope of work must be agreed in writing before additional work begins.</li>
+          <li>This authorization is in addition to — and does not replace — the signed estimate.</li>
+        </ul>
+      </div>
+      {/* Signature blocks */}
+      <div style={{padding:"16px 20px",borderBottom:"2px solid #ece9f4"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:30}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:11,color:"#8b7cb4",textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Homeowner Authorization</div>
+            {signature
+              ?<img src={signature} alt="Signature" style={{height:50,maxWidth:"100%",objectFit:"contain",marginBottom:4,display:"block"}}/>
+              :<div style={{borderBottom:"1.5px solid #999",height:50,marginBottom:4}}/>}
+            <div style={{fontSize:11,color:"#666"}}>Signature</div>
+            {signatureTimestamp&&<div style={{fontSize:9.5,color:"#888",marginTop:3,fontStyle:"italic"}}>✓ Signed: {signatureTimestamp}</div>}
+            {signatureIP&&<div style={{fontSize:9,color:"#aaa"}}>IP: {signatureIP}</div>}
+            <div style={{borderBottom:"1.5px solid #ccc",marginTop:14,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Print Name</div>
+            <div style={{borderBottom:"1.5px solid #ccc",marginTop:10,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Date</div>
+          </div>
+          <div>
+            <div style={{fontWeight:700,fontSize:11,color:"#8b7cb4",textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Beshert Representative</div>
+            <div style={{borderBottom:"1.5px solid #999",height:50,marginBottom:4}}/>
+            <div style={{fontSize:11,color:"#666"}}>Signature</div>
+            <div style={{borderBottom:"1.5px solid #ccc",marginTop:14,marginBottom:4,height:28,display:"flex",alignItems:"flex-end"}}><span style={{fontSize:12,color:"#333",fontWeight:600}}>{preparedBy||"Carlito"}</span></div>
+            <div style={{fontSize:11,color:"#666"}}>Print Name</div>
+            <div style={{borderBottom:"1.5px solid #ccc",marginTop:10,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Date</div>
+          </div>
+        </div>
+      </div>
+      {/* Footer */}
+      <div style={{background:"#1a2744",color:"#fff",padding:"7px 20px",fontSize:10,textAlign:"center",letterSpacing:1.5,borderRadius:"0 0 6px 6px"}}>
+        ISSUED BY BESHERT, A QUALIFIED 501(C)(3) NONPROFIT ORGANIZATION · www.thebeshertgroup.com
+      </div>
+    </div>
+  );
+}
+
 function HelpTopic({topic, isLast}) {
   const [open, setOpen] = useState(false);
   return (
@@ -723,7 +811,10 @@ function BeshertBuilder() {
   const [materialLibrary,setMaterialLibrary]=useState([]);
   const [newMaterialText,setNewMaterialText]=useState("");
   const [signature,setSignature]=useState(null);
-  const [showSigPad,setShowSigPad]=useState(false);
+  const [showSigPad,       setShowSigPad]       =useState(false);
+  const [signatureTimestamp,setSignatureTimestamp]=useState(null);
+  const [signatureIP,       setSignatureIP]       =useState(null);
+  const [showWorkAuth,      setShowWorkAuth]      =useState(false);
   const sigCanvasRef=useRef(null);
   const sigDrawing=useRef(false);
   const [clientEmail,setClientEmail]=useState("");
@@ -903,7 +994,7 @@ function BeshertBuilder() {
       finalPageIds:finalPages.filter(fp=>fp.on).map(fp=>fp.id),
       status,measurements,clientEmail,isInsuranceJob,insFields,
       materials:materials.map(m=>m.text),
-      signature:signature||null,
+      signature:signature||null, signatureTimestamp:signatureTimestamp||null, signatureIP:signatureIP||null,
       notes, cloudSynced:false
     };
     const res = await storage.save(est);
@@ -948,6 +1039,8 @@ function BeshertBuilder() {
     setClientEmail(est.clientEmail||"");
     setMaterials(est.materials?.map((t,i)=>({id:i,text:t,on:true}))||[]);
     setSignature(est.signature||null);
+    setSignatureTimestamp(est.signatureTimestamp||null);
+    setSignatureIP(est.signatureIP||null);
     setNotes(est.notes||"");
     setIsInsuranceJob(est.isInsuranceJob||false);
     setInsFields(est.insFields||{insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
@@ -1004,7 +1097,7 @@ function BeshertBuilder() {
     setContractNumber(""); setContractLink(""); setIsSaved(false); setSaveStatus("");
     setIsEditing(false); setShowLoadPanel(false); setLoadEditInput(""); setLoadEditError("");
     setStatus("Pending"); setMeasurements({squares:"",pitch:"4/12",layers:"1",decking:"Good"});
-    setMaterials([]); setNewMaterialText(""); setSignature(null); setClientEmail("");
+    setMaterials([]); setNewMaterialText(""); setSignature(null); setSignatureTimestamp(null); setSignatureIP(null); setClientEmail("");
     setValidationErrors([]);
     setNotes(""); setProposalMode("quick"); setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     localStorage.removeItem(DRAFT_KEY);
@@ -1060,7 +1153,15 @@ function BeshertBuilder() {
   const sigMove=(e)=>{e.preventDefault();if(!sigDrawing.current)return;const cv=sigCanvasRef.current;if(!cv)return;const p=sigGetPos(e,cv);const ctx=cv.getContext("2d");ctx.lineWidth=2.5;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a2744";ctx.lineTo(p.x,p.y);ctx.stroke();};
   const sigEnd=()=>{sigDrawing.current=false;};
   const sigClear=()=>{const cv=sigCanvasRef.current;if(!cv)return;cv.getContext("2d").clearRect(0,0,cv.width,cv.height);};
-  const sigCapture=()=>{const cv=sigCanvasRef.current;if(!cv)return;setSignature(cv.toDataURL("image/png"));setShowSigPad(false);};
+  const sigCapture=async()=>{
+    const cv=sigCanvasRef.current; if(!cv)return;
+    setSignature(cv.toDataURL("image/png"));
+    const ts=new Date().toLocaleString("en-US",{weekday:"short",year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",timeZoneName:"short"});
+    setSignatureTimestamp(ts);
+    try{const r=await fetch("https://api.ipify.org?format=json");const d=await r.json();setSignatureIP(d.ip);}
+    catch(e){setSignatureIP("IP unavailable");}
+    setShowSigPad(false);
+  };
   const validate=()=>{const e=[];if(!client.name.trim())e.push("Client name is required");if(!client.address.trim())e.push("Property address is required");if(baseParsedTotal<=0)e.push("Total price must be greater than $0");setValidationErrors(e);return e.length===0;};
   const loadDashboard=async()=>{setDashboardLoading(true);const list=await storage.list();setDashboardData(Array.isArray(list)?list:[]);setDashboardLoading(false);};
   const handleMailto=()=>{
@@ -1221,7 +1322,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     totalPrice:baseParsedTotal, priceDesc, optItems, paymentSplit,
     contractNumber, linkedContract:"", isRevised:isEditing&&isSaved,
     additionalJobs, paymentStructure, customPayments,
-    signature, status, measurements, materials,
+    signature, signatureTimestamp, signatureIP, status, measurements, materials,
     isInsuranceJob, insFields
   };
 
@@ -1946,6 +2047,8 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                         {isPdfLoading ? "⏳ Generating…" : "⬇ Download PDF"}
                       </button>
                       <button style={S.btn(signature?"#27ae60":PURPLE_DARK)} onClick={()=>setShowSigPad(true)}>{signature?"✍ Re-Sign":"✍ Capture Signature"}</button>
+                      {!signature&&<div style={{fontSize:10,color:"#e67e22",fontWeight:700,marginTop:4,textAlign:"center"}}>⚠ Signature needed before printing</div>}
+                      <button style={{...S.btn("#2c3e50"),marginTop:4}} onClick={()=>setShowWorkAuth(true)}>📋 Work Authorization</button>
                       <button style={S.btn("#2980b9")} onClick={()=>{setClientEmail(client.email||clientEmail||"");setShowEmailModal(true);}}>✉ Email to Client</button>
                     </div>
                   </div>
@@ -2200,6 +2303,31 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           </div>
         )}
 
+        {/* WORK AUTH MODAL */}
+        {showWorkAuth&&(
+          <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16,overflowY:"auto"}}>
+            <div style={{background:"#fff",borderRadius:12,maxWidth:860,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)",marginTop:20,marginBottom:20}}>
+              <div style={{background:NAVY,borderRadius:"12px 12px 0 0",padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{fontWeight:700,fontSize:16,color:GOLD}}>📋 Work Authorization</div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>{setShowWorkAuth(false);setTimeout(()=>{const wa=document.getElementById("work-auth-area");if(wa)window.print();},100);}} style={{...S.btn(GOLD,NAVY),fontSize:12}}>🖨 Print</button>
+                  <button onClick={()=>setShowWorkAuth(false)} style={{background:"rgba(255,255,255,0.15)",border:"none",color:"#fff",fontSize:20,cursor:"pointer",borderRadius:6,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                </div>
+              </div>
+              <div style={{padding:20}}>
+                <WorkAuthPreview
+                  roofingLogo={ROOFING_LOGO} churchLogo={CHURCH_LOGO}
+                  client={client} job={JOBS[jobType]} contractNumber={contractNumber}
+                  docDate={docDate} preparedBy={preparedBy} totalPrice={totalPrice}
+                  paymentSplit={paymentSplit} signature={signature}
+                  signatureTimestamp={signatureTimestamp} signatureIP={signatureIP}
+                  scopeItems={scopeItems}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* HELP MODAL */}
         {showHelp && (
           <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16,overflowY:"auto"}}>
@@ -2221,7 +2349,11 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
         )}
 
         {/* SIGNATURE PAD MODAL */}
-        {showSigPad&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:500,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✍ Client Signature</div><div style={{fontSize:12,color:"#888",marginBottom:14}}>Sign below using mouse or finger. Appears on the printed document.</div><canvas ref={sigCanvasRef} width={440} height={150} style={{border:`2px solid ${PURPLE_LIGHT}`,borderRadius:8,cursor:"crosshair",background:"#fafafa",display:"block",width:"100%",touchAction:"none"}} onMouseDown={sigStart} onMouseMove={sigMove} onMouseUp={sigEnd} onMouseLeave={sigEnd} onTouchStart={sigStart} onTouchMove={sigMove} onTouchEnd={sigEnd}/><div style={{display:"flex",gap:10,marginTop:14,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={sigClear}>Clear</button><button style={S.btn("#888")} onClick={()=>setShowSigPad(false)}>Cancel</button><button style={S.btn(HEADER_BG)} onClick={sigCapture}>Save Signature</button></div></div></div>)}
+        {showSigPad&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:500,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:8}}>✍ Client Signature</div>
+<div style={{background:"#fff8e8",border:"1px solid #f0d080",borderRadius:6,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#7a5800",lineHeight:1.6}}>
+  By signing below, the homeowner confirms they have read and agreed to the full scope of work, pricing, and payment terms of this estimate. This signature authorizes Beshert Roofing Redevelopment Group to perform the work described.
+</div>
+<div style={{fontSize:11,color:"#888",marginBottom:10}}>Sign below using finger or mouse. Timestamp and IP address will be recorded.</div><canvas ref={sigCanvasRef} width={440} height={150} style={{border:`2px solid ${PURPLE_LIGHT}`,borderRadius:8,cursor:"crosshair",background:"#fafafa",display:"block",width:"100%",touchAction:"none"}} onMouseDown={sigStart} onMouseMove={sigMove} onMouseUp={sigEnd} onMouseLeave={sigEnd} onTouchStart={sigStart} onTouchMove={sigMove} onTouchEnd={sigEnd}/><div style={{display:"flex",gap:10,marginTop:14,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={sigClear}>Clear</button><button style={S.btn("#888")} onClick={()=>setShowSigPad(false)}>Cancel</button><button style={S.btn(HEADER_BG)} onClick={sigCapture}>Save Signature</button></div></div></div>)}
 
         {/* EMAIL MODAL */}
         {showEmailModal&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:480,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✉ Email {docType==="invoice"?"Invoice":"Estimate"} to Client</div>
