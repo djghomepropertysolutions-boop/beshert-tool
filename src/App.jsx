@@ -16,7 +16,8 @@ const TEXT         = "#1e1e2e";
 
 // ── Company Contact Info ───────────────────────────────────────────────────────
 const COMPANY = {
-  office:  "216-326-7663",
+  office:  "(216) 326-ROOF",
+  officeNum: "2163267663",
   mobile:  "440-554-5332",
   email:   "beshert@thebeshertgroup.com",
   website: "www.thebeshertgroup.com",
@@ -190,9 +191,7 @@ function DocHeader({roofingLogo,churchLogo,docDate,label}) {
         <div>
           <div style={{fontWeight:700,fontSize:13,letterSpacing:1}}>BESHERT ROOFING REDEVELOPMENT GROUP</div>
           <div style={{fontSize:10,color:"rgba(255,255,255,0.75)",letterSpacing:2}}>MAGNANIMOUS LIFE · 501(C)(3) · EST. 2005</div>
-          <div style={{fontSize:9.5,color:"rgba(255,255,255,0.70)",marginTop:3}}>
-            📞 {COMPANY.office} · 📱 {COMPANY.mobile} · ✉ {COMPANY.email} · 🌐 {COMPANY.website}
-          </div>
+          <div style={{marginTop:4}}><span style={{fontSize:14,fontWeight:800,color:GOLD,letterSpacing:1}}>📞 {COMPANY.office}</span><span style={{fontSize:9,color:"rgba(255,255,255,0.5)",marginLeft:8}}>📱 {COMPANY.mobile} · ✉ {COMPANY.email}</span></div>
         </div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -213,7 +212,8 @@ function ContactBlock() {
     <div style={{background:NAVY,color:WHITE,padding:"16px 20px",borderBottom:`2px solid ${PURPLE_LIGHT}`}}>
       <div style={{fontWeight:700,fontSize:11,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>Questions? Contact Us</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-        {[["📞 Office",COMPANY.office],["📱 Mobile",COMPANY.mobile],["✉ Email",COMPANY.email],["🌐 Website",COMPANY.website]].map(([lbl,val])=>(
+        <div style={{marginBottom:10}}><span style={{color:"rgba(255,255,255,0.5)",fontSize:11}}>📞 Office: </span><span style={{fontWeight:800,fontSize:16,color:GOLD,letterSpacing:1}}>{COMPANY.office}</span></div>
+        {[["📱 Mobile",COMPANY.mobile],["✉ Email",COMPANY.email],["🌐 Website",COMPANY.website]].map(([lbl,val])=>(
           <div key={lbl} style={{fontSize:12.5}}>
             <span style={{color:"rgba(255,255,255,0.5)",marginRight:6}}>{lbl}:</span>
             <span style={{fontWeight:600,color:WHITE}}>{val}</span>
@@ -244,13 +244,11 @@ function Watermark({churchLogo}) {
 function ContractBadge({contractNumber,isRevised}) {
   if(!contractNumber) return null;
   return (
-    <div style={{background:NAVY,color:WHITE,padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <div style={{fontSize:10,letterSpacing:2,color:"rgba(255,255,255,0.5)",textTransform:"uppercase"}}>Contract Number</div>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <div style={{fontSize:22,fontWeight:700,letterSpacing:4,color:GOLD,fontFamily:"Georgia,serif"}}>{contractNumber}</div>
-        {isRevised && <span style={{background:"#e8a020",color:NAVY,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:4,letterSpacing:1}}>REVISED</span>}
-      </div>
-      <div style={{fontSize:10,letterSpacing:2,color:"rgba(255,255,255,0.5)",textTransform:"uppercase"}}>Keep for Your Records</div>
+    <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,padding:"5px 16px",background:"rgba(26,39,68,0.06)",borderBottom:`1px solid ${PURPLE_LIGHT}`}}>
+      <span style={{fontSize:9.5,color:"#888",textTransform:"uppercase",letterSpacing:1}}>Contract No.</span>
+      <span style={{background:NAVY,color:GOLD,padding:"3px 10px",borderRadius:4,fontSize:10.5,fontWeight:700,fontFamily:"monospace",letterSpacing:1,WebkitPrintColorAdjust:"exact",printColorAdjust:"exact"}}>{contractNumber}</span>
+      {isRevised&&<span style={{background:"#e8a020",color:NAVY,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,letterSpacing:1}}>REVISED</span>}
+      <span style={{fontSize:9,color:"#aaa",marginLeft:4}}>Keep for your records</span>
     </div>
   );
 }
@@ -271,6 +269,7 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
 
   return (
     <div id="print-area" style={{position:"relative",maxWidth:820,margin:"0 auto",fontFamily:"Georgia,serif",fontSize:13,color:TEXT}}>
+      <style>{`@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}#print-area{max-width:100%;}}`}</style>
       {docType==="invoice" && status==="Paid" && (
         <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",zIndex:200,overflow:"hidden"}}>
           <div style={{border:"7px solid rgba(21,156,89,0.65)",color:"rgba(21,156,89,0.65)",fontSize:80,fontWeight:900,transform:"rotate(-32deg)",letterSpacing:6,padding:"8px 18px",borderRadius:10,lineHeight:1}}>PAID</div>
@@ -312,12 +311,14 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
         </div>
 
         {measurements && (measurements.squares||measurements.pitch||measurements.layers||measurements.decking) && (
-          <div style={{background:"#f8f7fb",padding:"10px 20px",borderBottom:`1px solid ${PURPLE_LIGHT}`,display:"flex",gap:24,flexWrap:"wrap"}}>
-            <div style={{fontSize:10,color:"#888",textTransform:"uppercase",letterSpacing:1,alignSelf:"center"}}>Measurements:</div>
-            {measurements.squares&&<div style={{fontSize:12}}><span style={{color:"#888"}}>Squares: </span><strong>{measurements.squares}</strong></div>}
-            {measurements.pitch&&<div style={{fontSize:12}}><span style={{color:"#888"}}>Pitch: </span><strong>{measurements.pitch}</strong></div>}
-            {measurements.layers&&<div style={{fontSize:12}}><span style={{color:"#888"}}>Layers: </span><strong>{measurements.layers}</strong></div>}
-            {measurements.decking&&<div style={{fontSize:12}}><span style={{color:"#888"}}>Decking: </span><strong>{measurements.decking}</strong></div>}
+          <div style={{background:PURPLE_LIGHT,padding:"12px 20px",borderBottom:`2px solid ${PURPLE_DARK}`,borderLeft:`5px solid ${PURPLE_DARK}`}}>
+            <div style={{fontWeight:700,fontSize:11,color:PURPLE_DARK,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📐 Roof Measurements</div>
+            <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+              {measurements.squares&&<div style={{fontSize:12.5}}><span style={{color:"#888"}}>Squares: </span><strong style={{fontSize:14,color:NAVY}}>{measurements.squares}</strong></div>}
+              {measurements.pitch&&<div style={{fontSize:12.5}}><span style={{color:"#888"}}>Pitch: </span><strong style={{fontSize:14,color:NAVY}}>{measurements.pitch}</strong></div>}
+              {measurements.layers&&<div style={{fontSize:12.5}}><span style={{color:"#888"}}>Layers: </span><strong style={{fontSize:14,color:NAVY}}>{measurements.layers}</strong></div>}
+              {measurements.decking&&<div style={{fontSize:12.5}}><span style={{color:"#888"}}>Decking: </span><strong style={{fontSize:14,color:NAVY}}>{measurements.decking}</strong></div>}
+            </div>
           </div>
         )}
         {/* Insurance Claim Info */}
@@ -341,7 +342,7 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
         {/* Scope — Primary Job */}
         <div style={{background:WHITE,padding:"16px 20px",borderBottom:`2px solid ${PURPLE_LIGHT}`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{background:HEADER_BG,color:WHITE,fontWeight:700,fontSize:12,letterSpacing:1.5,padding:"6px 14px",borderRadius:4,display:"inline-block"}}>
+            <div style={{borderLeft:`5px solid ${PURPLE_DARK}`,paddingLeft:12,color:NAVY,fontWeight:700,fontSize:13,letterSpacing:1}}>
               SCOPE OF WORK{hasExtraJobs ? ` — ${job.label}` : ""}
             </div>
             {hasExtraJobs && <span style={{fontWeight:700,fontSize:14,color:NAVY}}>{fmtAmt(totalPrice)}</span>}
@@ -358,7 +359,7 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
           return (
             <div key={j.id||idx} style={{background:WHITE,padding:"16px 20px",borderBottom:`2px solid ${PURPLE_LIGHT}`}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{background:PURPLE_DARK,color:WHITE,fontWeight:700,fontSize:12,letterSpacing:1.5,padding:"6px 14px",borderRadius:4,display:"inline-block"}}>
+                <div style={{borderLeft:`5px solid ${PURPLE_DARK}`,paddingLeft:12,color:NAVY,fontWeight:700,fontSize:13,letterSpacing:1}}>
                   SCOPE OF WORK — {jLabel}
                 </div>
                 <span style={{fontWeight:700,fontSize:14,color:NAVY}}>{fmtAmt(j.price)}</span>
@@ -391,7 +392,7 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
 
         {/* Pricing — MODIFIED for multiple jobs */}
         <div style={{background:WHITE,padding:"16px 20px",borderBottom:`2px solid ${PURPLE_LIGHT}`}}>
-          <div style={{background:HEADER_BG,color:WHITE,fontWeight:700,fontSize:12,letterSpacing:1.5,padding:"6px 14px",borderRadius:4,marginBottom:14,display:"inline-block"}}>PRICING</div>
+          <div style={{borderLeft:`5px solid ${PURPLE_DARK}`,paddingLeft:12,color:NAVY,fontWeight:700,fontSize:13,letterSpacing:1,marginBottom:14}}>PRICING</div>
           {priceDesc && <div style={{fontSize:12.5,color:"#444",marginBottom:16,lineHeight:1.6}}>{priceDesc}</div>}
 
           {/* Job line items table when there are multiple jobs */}
@@ -573,7 +574,7 @@ function BillingInvoicePreview({roofingLogo,preparedBy,pm,bInvNum,bInvDate,bInvD
         <div style={{fontSize:11,color:"#666",marginTop:2}}>"A TRUSTED CHOICE SINCE 2005"</div>
       </div>
       <div style={{display:"flex",flexWrap:"wrap",padding:"16px 24px",borderBottom:"1px solid #e2e8f0",gap:16}}>
-        <div style={{flex:1,minWidth:200,fontSize:12,lineHeight:1.8,color:"#333"}}><div>Office: 216-326-7663</div><div>Mobile: 440-554-5332</div><div>Email: beshert@thebeshertgroup.com</div><div>Website: www.thebeshertgroup.com</div></div>
+        <div style={{flex:1,minWidth:200,fontSize:12,lineHeight:1.8,color:"#333"}}><div style={{fontWeight:700,fontSize:13}}>📞 (216) 326-ROOF</div><div>Mobile: 440-554-5332</div><div>Email: beshert@thebeshertgroup.com</div><div>Website: www.thebeshertgroup.com</div></div>
         <div style={{fontSize:12,lineHeight:1.8,color:"#333"}}><div><strong>Prepared by:</strong> {preparedBy}</div><div><strong>Project Manager:</strong> {pm}</div></div>
       </div>
       <div style={{padding:"16px 24px",borderBottom:"1px solid #e2e8f0"}}>
@@ -666,6 +667,14 @@ function BeshertBuilder() {
   },[]);
   const isMobile = windowWidth < 700;
   const isTablet = windowWidth < 960;
+
+  // ── Phone format helper ──
+  const formatPhone = (val) => {
+    const d = val.replace(/\D/g,"").slice(0,10);
+    if(d.length<=3) return d;
+    if(d.length<=6) return `(${d.slice(0,3)}) ${d.slice(3)}`;
+    return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  };
 
   // ── V14 Quick Estimate mode ──
   const [proposalMode, setProposalMode] = useState("quick"); // "quick" | "full"
@@ -807,6 +816,14 @@ function BeshertBuilder() {
   // ── Computed Values ──
   const job             = JOBS[jobType];
   const baseParsedTotal = parseFloat(String(totalPrice).replace(/[^0-9.]/g,""))||0;
+
+  // ── Save reminder (must be after isSaved + baseParsedTotal) ──
+  const hasUnsavedData = !isSaved && (client.name.trim().length>0 || client.address.trim().length>0 || baseParsedTotal>0);
+  useEffect(()=>{
+    const handler=(e)=>{if(hasUnsavedData){e.preventDefault();e.returnValue="";}};
+    window.addEventListener("beforeunload",handler);
+    return()=>window.removeEventListener("beforeunload",handler);
+  },[hasUnsavedData]);
   const addJobsTotal    = additionalJobs.reduce((s,j)=>s+(parseFloat(String(j.price||"0").replace(/[^0-9.]/g,""))||0),0);
   const parsedTotal     = baseParsedTotal + addJobsTotal;
   const addonTotal      = optItems.filter(o=>o.includeInTotal&&parseFloat(o.price)>0).reduce((s,o)=>s+parseFloat(o.price),0);
@@ -1068,7 +1085,7 @@ If you have any questions, please contact us at any time.
 Sincerely,
 Carlito
 Beshert Roofing Redevelopment Group
-Office: 216-326-7663  |  Mobile: 440-554-5332
+(216) 326-ROOF  |  Mobile: 440-554-5332
 beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     window.open(`mailto:${clientEmail}?subject=${subject}&body=${body}`);
     setShowEmailModal(false);
@@ -1359,7 +1376,8 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:14,marginBottom:14}}>
                   <div><label style={S.label}>City</label><input style={S.input} placeholder="Cleveland" value={client.city} onChange={e=>setClient(p=>({...p,city:e.target.value}))}/></div>
-                  <div><label style={S.label}>Phone</label><input style={S.input} placeholder="(216) 000-0000" value={client.phone||""} onChange={e=>setClient(p=>({...p,phone:e.target.value}))}/></div>
+                  <div><label style={S.label}>ZIP</label><input style={S.input} placeholder="44102" value={client.zip||""} onChange={e=>setClient(p=>({...p,zip:e.target.value}))}/></div>
+                  <div><label style={S.label}>Phone</label><input style={S.input} placeholder="(216) 000-0000" value={client.phone||""} onChange={e=>setClient(p=>({...p,phone:formatPhone(e.target.value)}))}/></div>
                   <div><label style={S.label}>Date</label><input style={S.input} value={docDate} onChange={e=>setDocDate(e.target.value)}/></div>
                 </div>
                 <div style={{marginBottom:14}}>
@@ -1388,6 +1406,45 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                   </div>
                 </div>
                 <div style={{marginBottom:14}}><label style={S.label}>Internal Notes <span style={{fontWeight:400,color:"#888"}}>(not printed)</span></label><input style={S.input} placeholder="e.g. call after 3pm · gate code 1234" value={notes} onChange={e=>setNotes(e.target.value)}/></div>
+                {/* Measurement Strip */}
+                <div style={{...S.card,background:"#f8f7fb",border:`1px solid ${PURPLE_LIGHT}`,marginBottom:14}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                    <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK}}>📐 Roof Measurements</div>
+                    <div style={{fontSize:11,color:"#888",fontStyle:"italic"}}>From HoverApp, EagleView, or manual measurement</div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 1fr 1fr 1fr",gap:10,marginBottom:10}}>
+                    <div>
+                      <label style={S.label}>Squares</label>
+                      <input style={S.input} type="number" placeholder="e.g. 22" value={measurements.squares} onChange={e=>setMeasurements(p=>({...p,squares:e.target.value}))}/>
+                    </div>
+                    <div>
+                      <label style={S.label}>Pitch</label>
+                      <select style={S.input} value={measurements.pitch} onChange={e=>setMeasurements(p=>({...p,pitch:e.target.value}))}>
+                        {["3/12","4/12","5/12","6/12","7/12","8/12","9/12","10/12","12/12"].map(p=><option key={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>Layers</label>
+                      <select style={S.input} value={measurements.layers} onChange={e=>setMeasurements(p=>({...p,layers:e.target.value}))}>
+                        {["1","2","3+"].map(l=><option key={l}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>Decking</label>
+                      <select style={S.input} value={measurements.decking} onChange={e=>setMeasurements(p=>({...p,decking:e.target.value}))}>
+                        {["Good","Fair","Poor","Unknown"].map(d=><option key={d}>{d}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  {measurements.squares && parseFloat(measurements.squares) > 0 && (
+                    <div style={{background:"#fffbe8",border:"1px solid #f0d080",borderRadius:6,padding:"8px 12px",fontSize:12,color:"#7a5800"}}>
+                      💡 <strong>{measurements.squares} squares</strong> of {JOBS[jobType]?.label||"roofing"} — typical Cleveland range:
+                      <strong> {new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(parseFloat(measurements.squares)*350)}</strong> –
+                      <strong> {new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(parseFloat(measurements.squares)*500)}</strong>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,padding:"10px 14px",background:"#fafafa",borderRadius:8,border:`1px solid #e2e8f0`}}>
                   <span style={{fontSize:12,color:"#666"}}>⚡ Insurance claim?</span>
                   <button onClick={()=>setIsInsuranceJob(p=>!p)} style={{...S.btn(isInsuranceJob?"#C9A84C":WHITE,isInsuranceJob?NAVY:PURPLE_DARK),border:`2px solid ${isInsuranceJob?"#C9A84C":"#d1c9e8"}`,padding:"5px 14px",fontSize:11}}>{isInsuranceJob?"✓ Yes":"No"}</button>
@@ -1396,7 +1453,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                 {validationErrors.length>0&&(<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"12px 16px",marginBottom:14}}>{validationErrors.map((e,i)=><div key={i} style={{fontSize:12,color:"#c0392b"}}>⚠ {e}</div>)}</div>)}
                 <div style={{display:"flex",gap:10,justifyContent:"space-between",flexWrap:"wrap"}}>
                   <button style={S.btn(PURPLE_DARK)} onClick={()=>setProposalMode("full")}>📋 Switch to Full Estimate →</button>
-                  <button style={{...S.btn(saveStatus==="saving"?"#888":"#27ae60"),minWidth:180}} onClick={handleQuickSaveAndPreview} disabled={saveStatus==="saving"}>{saveStatus==="saving"?"⏳ Saving…":"🚀 Save & Preview →"}</button>
+                  <button className={hasUnsavedData?"save-pulse":""} style={{...S.btn(saveStatus==="saving"?"#888":isSaved?"#159c59":"#27ae60"),minWidth:180,transition:"all 0.3s"}} onClick={handleQuickSaveAndPreview} disabled={saveStatus==="saving"}>{saveStatus==="saving"?"⏳ Saving…":isSaved?"✓ Saved":"🚀 Save & Preview →"}</button>
                 </div>
               </div>
             )}
@@ -1490,7 +1547,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                     {(isMobile?[["name","Full Name"],["address","Property Address"],["city","City"],["state","State"],["zip","ZIP"],["phone","Phone"],["email","Email"],["title","Title"],["company","Company"]]:[["name","Full Name"],["title","Title / Salutation"],["company","Organization / Company"],["address","Property Address"],["city","City"],["state","State"],["zip","ZIP"],["phone","Phone"],["email","Email"]]).map(([k,lbl])=>(
                       <div key={k} style={k==="company"||k==="address"?{gridColumn:"1/-1"}:{}}>
                         <label style={S.label}>{lbl}</label>
-                        <input style={S.input} placeholder={k==="title"?"e.g. Mr., Mrs., Dr.":""} value={client[k]} onChange={e=>setClient(p=>({...p,[k]:e.target.value}))}/>
+                        <input style={S.input} placeholder={k==="title"?"e.g. Mr., Mrs., Dr.":""} value={client[k]} onChange={e=>setClient(p=>({...p,[k]:k==="phone"?formatPhone(e.target.value):e.target.value}))}/>
                       </div>
                     ))}
                   </div>
@@ -1877,7 +1934,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                     <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
                       <button style={S.btn(PURPLE_DARK)} onClick={()=>{setShowPreview(false);setStep(4);}}>← Back</button>
                       {!isSaved
-                        ? <button style={S.btn(isEditing?"#e8a020":HEADER_BG,isEditing?NAVY:"#fff")} onClick={()=>{if(validate())handleSaveEstimate();}} disabled={saveStatus==="saving"}>
+                        ? <button className={hasUnsavedData?"save-pulse":""} style={{...S.btn(isEditing?"#e8a020":isSaved?"#159c59":HEADER_BG,isEditing?NAVY:"#fff"),transition:"all 0.3s"}} onClick={()=>{if(validate())handleSaveEstimate();}} disabled={saveStatus==="saving"}>
                             {saveStatus==="saving" ? "⏳ Saving…" : isEditing ? "💾 Save Revised Estimate" : "💾 Save & Generate Contract #"}
                           </button>
                         : <div style={{...S.tag("#27ae60"),fontSize:12,padding:"6px 12px"}}>
@@ -2018,7 +2075,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                     {[["name","Client Name"],["address","Property Address"],["phone","Phone"],["email","Email"]].map(([k,lbl])=>(
-                      <div key={k}><label style={S.label}>{lbl}</label><input style={S.input} value={client[k]||""} onChange={e=>setClient(p=>({...p,[k]:e.target.value}))}/></div>
+                      <div key={k}><label style={S.label}>{lbl}</label><input style={S.input} value={client[k]||""} onChange={e=>setClient(p=>({...p,[k]:k==="phone"?formatPhone(e.target.value):e.target.value}))}/></div>
                     ))}
                   </div>
                 </div>
@@ -2114,6 +2171,9 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           </>
         )}
 
+        {/* Save pulse animation */}
+        <style>{`@keyframes savePulse{0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,0.5)}50%{box-shadow:0 0 0 12px rgba(39,174,96,0)}}@keyframes floatPulse{0%,100%{box-shadow:0 6px 24px rgba(39,174,96,0.5)}50%{box-shadow:0 6px 32px rgba(39,174,96,0.8)}}.save-pulse{animation:savePulse 1.4s ease-in-out infinite}.float-pulse{animation:floatPulse 1.4s ease-in-out infinite}`}</style>
+
         {/* Toast Notifications */}
         <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,display:"flex",flexDirection:"column",gap:8,maxWidth:360,pointerEvents:"none"}}>
           {toasts.map(t=>(
@@ -2124,6 +2184,21 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
             </div>
           ))}
         </div>
+
+        {/* Floating sticky save button */}
+        {appMode==="form" && mode==="proposal" && !showPreview && hasUnsavedData && (
+          <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",zIndex:998,pointerEvents:"all"}}>
+            <button
+              className="float-pulse"
+              onClick={()=>{if(proposalMode==="quick")handleQuickSaveAndPreview();else if(validate())handleSaveEstimate();}}
+              disabled={saveStatus==="saving"}
+              style={{background:saveStatus==="saving"?"#888":"#27ae60",color:"#fff",border:"none",borderRadius:30,padding:"14px 32px",fontSize:15,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"Georgia,serif",letterSpacing:0.5}}>
+              <span style={{fontSize:18}}>💾</span>
+              {saveStatus==="saving"?"Saving…":"Save Estimate"}
+              <span style={{fontSize:11,opacity:0.8,marginLeft:4}}>tap to save</span>
+            </button>
+          </div>
+        )}
 
         {/* HELP MODAL */}
         {showHelp && (
