@@ -611,9 +611,8 @@ export default function BeshertBuilder() {
   const [addonLibrary, setAddonLibrary] = useState([]);
 
   // ── V12 Billing Invoice State ──
-  const today = new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
   const [bInvNum,    setBInvNum]    = useState("");
-  const [bInvDate,   setBInvDate]   = useState(today);
+  const [bInvDate,   setBInvDate]   = useState(today());
   const [bInvDueDate,setBInvDueDate]= useState("Due upon receipt");
   const [bInvClient, setBInvClient] = useState({name:"",address:"",city:""});
   const [bInvLines,  setBInvLines]  = useState([{id:1,desc:"",amt:""}]);
@@ -994,7 +993,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
   const addBInvLine    = () => setBInvLines(p=>[...p,{id:Date.now(),desc:"",amt:""}]);
   const removeBInvLine = id => setBInvLines(p=>p.length>1?p.filter(l=>l.id!==id):p);
   const updateBInvLine = (id,field,val) => setBInvLines(p=>p.map(l=>l.id===id?{...l,[field]:val}:l));
-  const resetBillingInv = () => { const t=new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}); setBInvNum(""); setBInvDate(t); setBInvDueDate("Due upon receipt"); setBInvClient({name:"",address:"",city:""}); setBInvLines([{id:1,desc:"",amt:""}]); setBInvTerms("Due upon receipt."); setBInvMethods("Check, ACH, or other approved method."); setBInvContract(""); setBInvPreview(false); setBInvStatus("Invoiced"); };
+  const resetBillingInv = () => { setBInvNum(""); setBInvDate(today()); setBInvDueDate("Due upon receipt"); setBInvClient({name:"",address:"",city:""}); setBInvLines([{id:1,desc:"",amt:""}]); setBInvTerms("Due upon receipt."); setBInvMethods("Check, ACH, or other approved method."); setBInvContract(""); setBInvPreview(false); setBInvStatus("Invoiced"); };
   const handleUpdateStatus = async (contractNum, newStatus) => {
     const est = await storage.get(contractNum);
     if(est){ est.status=newStatus; await storage.save(est); setDashboardData(prev=>prev.map(e=>e.contractNumber===contractNum?{...e,status:newStatus}:e)); }
