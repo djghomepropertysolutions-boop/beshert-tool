@@ -666,6 +666,8 @@ export default function BeshertBuilder() {
   const [bInvMethods,setBInvMethods]= useState("Check, ACH, or other approved method.");
   const [bInvContract,setBInvContract]=useState("");
   const [bInvPreview,setBInvPreview]= useState(false);
+  const [bInvSaved,  setBInvSaved]  = useState(false);
+  const [bInvSaving, setBInvSaving] = useState(false);
   const [bInvStatus, setBInvStatus] = useState("Invoiced");
   const [updatingStatusId,setUpdatingStatusId]=useState(null);
 
@@ -983,7 +985,7 @@ export default function BeshertBuilder() {
   useEffect(()=>{
     if(!client.name&&!totalPrice)return;
     try{const draft={client,lastName,houseNum,camLink,jobType,paymentSplit,paymentStructure,customPayments,preparedBy,pm,docDate,totalPrice,priceDesc,optItems,additionalJobs,contractNumber,status,measurements,materials,clientEmail,scopeItems:scopeItems.map(s=>s.text),isInsuranceJob,insFields};localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));}catch(e){}
-  },[client,lastName,houseNum,jobType,totalPrice,scopeItems,status,measurements,materials,clientEmail]);
+  },[client,lastName,houseNum,jobType,totalPrice,scopeItems,status,measurements,materials,clientEmail,isInsuranceJob,insFields]);
   const restoreDraft=()=>{try{const d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"{}");if(d.client)setClient(d.client);if(d.lastName)setLastName(d.lastName);if(d.houseNum)setHouseNum(d.houseNum);if(d.camLink)setCamLink(d.camLink);if(d.jobType){setJobType(d.jobType);setScopeItems(d.scopeItems?.length>0?d.scopeItems.map((t,i)=>({id:i,text:t,on:true})):JOBS[d.jobType].scope.map((t,i)=>({id:i,text:t,on:true})));}if(d.paymentSplit)setSplit(d.paymentSplit);if(d.paymentStructure)setPaymentStructure(d.paymentStructure);if(d.customPayments)setCustomPayments(d.customPayments);if(d.preparedBy)setPreparedBy(d.preparedBy);if(d.pm)setPm(d.pm);if(d.docDate)setDocDate(d.docDate);if(d.totalPrice)setTotalPrice(String(d.totalPrice));if(d.priceDesc)setPriceDesc(d.priceDesc);if(d.optItems)setOptItems(d.optItems);if(d.additionalJobs)setAdditionalJobs(d.additionalJobs);if(d.contractNumber)setContractNumber(d.contractNumber);if(d.status)setStatus(d.status);if(d.measurements)setMeasurements(d.measurements);if(d.materials)setMaterials(d.materials);if(d.clientEmail)setClientEmail(d.clientEmail);if(d.isInsuranceJob!==undefined)setIsInsuranceJob(d.isInsuranceJob);if(d.insFields)setInsFields(d.insFields);}catch(e){}setHasDraft(false);localStorage.removeItem(DRAFT_KEY);};
   const addMaterial=()=>{if(!newMaterialText.trim())return;saveMaterialLib(newMaterialText);setMaterialLibrary(loadMaterialLib());setMaterials(p=>[...p,{id:Date.now(),text:newMaterialText,on:true}]);setNewMaterialText("");};
   const toggleMaterial=id=>setMaterials(p=>p.map(m=>m.id===id?{...m,on:!m.on}:m));
@@ -1025,6 +1027,46 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     setShowEmailModal(false);
   };
   const FROM_EMAILS = ["beshert@thebeshertgroup.com","cbrown7745@gmail.com"];
+  const handleSaveBillingInvoice = async () => {
+    if(!bInvNum){ alert("Please generate an invoice number first."); return; }
+    setBInvSaving(true);
+    const subtotal = bInvLines.reduce((sum,l)=>sum+(parseFloat(String(l.amt).replace(/[^0-9.]/g,""))||0),0);
+    const inv = {
+      contractNumber: bInvNum,
+      docType: "billing_invoice",
+      client: {name:bInvClient.name, address:bInvClient.address, city:bInvClient.city},
+      bInvDate, bInvDueDate, bInvClient, bInvLines, bInvTerms, bInvMethods,
+      bInvContract, status:bInvStatus, preparedBy, pm,
+      totalPrice: subtotal,
+      dateCreated: today()
+    };
+    await storage.save(inv);
+    setBInvSaved(true);
+    setBInvSaving(false);
+    setDashboardData(prev=>{
+      const idx=prev.findIndex(e=>e.contractNumber===bInvNum);
+      if(idx>=0){const updated=[...prev];updated[idx]=inv;return updated;}
+      return [...prev,inv];
+    });
+    setTimeout(()=>setBInvSaved(false),3000);
+  };
+
+  const handleLoadBillingInvoice = (inv) => {
+    setBInvNum(inv.contractNumber||"");
+    setBInvDate(inv.bInvDate||today());
+    setBInvDueDate(inv.bInvDueDate||"Due upon receipt");
+    setBInvClient(inv.bInvClient||{name:"",address:"",city:""});
+    setBInvLines(inv.bInvLines||[{id:1,desc:"",amt:""}]);
+    setBInvTerms(inv.bInvTerms||"Due upon receipt.");
+    setBInvMethods(inv.bInvMethods||"Check, ACH, or other approved method.");
+    setBInvContract(inv.bInvContract||"");
+    setBInvStatus(inv.status||"Invoiced");
+    setBInvPreview(false);
+    setBInvSaved(false);
+    setMode("invoice");
+    setAppMode("form");
+  };
+
   const genBillingNum = () => {
     const yr=new Date().getFullYear();
     const key=`brrg_billing_inv_${yr}`;
@@ -1078,7 +1120,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             <button onClick={()=>{loadDashboard();setAppMode("dashboard");}} style={{...S.btn(appMode==="dashboard"?GOLD:PURPLE_DARK,appMode==="dashboard"?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:isMobile?10:11,padding:isMobile?"6px 10px":"8px 18px"}}>📋 {isMobile?"Dash":"Dashboard"}</button>
             {["proposal","invoice"].map(m=>(
-              <button key={m} onClick={()=>setMode(m)} style={{...S.btn(mode===m?GOLD:PURPLE_DARK,mode===m?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:11}}>
+              <button key={m} onClick={()=>{setMode(m);if(m==="invoice"&&dashboardData.length===0)loadDashboard();}} style={{...S.btn(mode===m?GOLD:PURPLE_DARK,mode===m?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:11}}>
                 {m==="proposal"?"📄 Proposal":"🧾 Invoice"}
               </button>
             ))}
@@ -1116,7 +1158,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                               const q=dashboardSearch.toLowerCase();
                               if(q&&![e.contractNumber,e.client?.name,e.client?.address].join(" ").toLowerCase().includes(q))return false;
                               return dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter;
-                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{handleLoadForEdit(e.contractNumber);setMode("proposal");setAppMode("form");}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{JOBS[e.jobType]?.icon||"📋"} {JOBS[e.jobType]?.label||"—"}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px"}} onClick={ev=>ev.stopPropagation()}>
+                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{if(e.docType==="billing_invoice"){handleLoadBillingInvoice(e);}else{handleLoadForEdit(e.contractNumber);setMode("proposal");setAppMode("form");}}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{e.docType==="billing_invoice"?"🧾 Billing Invoice":(JOBS[e.jobType]?.icon||"📋")+" "+(JOBS[e.jobType]?.label||"—")}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px"}} onClick={ev=>ev.stopPropagation()}>
                                   <select value={e.status||"Pending"} onChange={ev=>{ev.stopPropagation();handleUpdateStatus(e.contractNumber,ev.target.value);}} style={{background:STATUS_COLORS[e.status||"Pending"]||"#888",color:"#fff",border:"none",borderRadius:12,padding:"3px 9px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif"}}>
                                     {STATUS_OPTIONS.map(s=><option key={s} value={s} style={{background:"#fff",color:"#333"}}>{s}</option>)}
                                   </select>
@@ -1725,6 +1767,9 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                 </div>
                 <div style={{display:"flex",gap:10,justifyContent:"space-between",flexWrap:"wrap"}}>
                   <button style={S.btn(PURPLE_DARK)} onClick={()=>setBInvPreview(false)}>← Edit Invoice</button>
+                  <button style={S.btn(bInvSaved?"#27ae60":bInvSaving?"#888":HEADER_BG)} onClick={handleSaveBillingInvoice} disabled={bInvSaving}>
+                    {bInvSaved?"✓ Saved!":bInvSaving?"⏳ Saving…":"💾 Save Invoice"}
+                  </button>
                   <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                     <button style={S.btn(PURPLE_DARK)} onClick={()=>{setDocType("invoice");window.print();}}>🖨 Print</button>
                     <button style={S.btn(isPdfLoading?"#888":PURPLE_DARK)} onClick={handleDownloadPDF} disabled={isPdfLoading}>{isPdfLoading?"⏳ Generating…":"⬇ Download PDF"}</button>
