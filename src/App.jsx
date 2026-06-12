@@ -235,9 +235,12 @@ function DocFooter() {
 function Watermark({churchLogo}) {
   if(!churchLogo) return null;
   return (
-    <div style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",overflow:"hidden",zIndex:0}}>
-      <img src={churchLogo} alt="" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%) rotate(-30deg)",width:"60%",opacity:0.09,objectFit:"contain"}}/>
-    </div>
+    <>
+      <style>{`@media print{#beshert-watermark{position:fixed!important;top:50%!important;left:50%!important;transform:translate(-50%,-50%) rotate(-25deg)!important;width:65%!important;opacity:0.10!important;z-index:9999!important;pointer-events:none!important;}}`}</style>
+      <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,pointerEvents:"none",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+        <img id="beshert-watermark" src={churchLogo} alt="" style={{width:"70%",opacity:0.10,objectFit:"contain",transform:"rotate(-25deg)",userSelect:"none",pointerEvents:"none"}}/>
+      </div>
+    </>
   );
 }
 
@@ -549,9 +552,118 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
 }
 
 // ═════════════════════ MAIN COMPONENT ════════════════════════════════════════
+function LOAPreview({roofingLogo,churchLogo,client,insFields,contractNumber,docDate,signature,signatureTimestamp,signatureIP}) {
+  return (
+    <div id="loa-area" style={{maxWidth:820,margin:"0 auto",fontFamily:"Georgia,serif",fontSize:12.5,color:"#1a1a2a",background:"#fff",position:"relative"}}>
+      <Watermark churchLogo={churchLogo}/>
+      <style>{`@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}#loa-area{max-width:100%;}}`}</style>
+      {/* Header */}
+      <div style={{background:"#1a2744",color:"#fff",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderRadius:"6px 6px 0 0"}}>
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          {roofingLogo&&<img src={roofingLogo} alt="" style={{height:48,objectFit:"contain",background:"#fff",borderRadius:4,padding:3}}/>}
+          <div>
+            <div style={{fontWeight:700,fontSize:13,letterSpacing:1}}>BESHERT ROOFING REDEVELOPMENT GROUP</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",letterSpacing:2}}>Affiliated with Magnanimous Life 501(c)(3) · A Trusted Choice Since 2005</div>
+            <div style={{fontSize:11,color:"#C9A84C",fontWeight:700,marginTop:2}}>📞 (216) 326-ROOF · beshert@thebeshertgroup.com · www.thebeshertgroup.com</div>
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:15,fontWeight:700,color:"#C9A84C",letterSpacing:1}}>LETTER OF AUTHORIZATION</div>
+          <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",marginTop:2}}>Third-Party Authorization to Communicate with Insurance Provider</div>
+          <div style={{fontSize:9,color:"rgba(255,255,255,0.4)",marginTop:2}}>Transmit to insurance claims department via fax or email.</div>
+        </div>
+      </div>
+
+      {/* TO block */}
+      <div style={{background:"#f8f9fb",padding:"12px 20px",borderBottom:"1px solid #e2e8f0",fontSize:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+          {[["TO",insFields?.insurer||"_______________"],["FAX / EMAIL","_______________"],["ATTN","_______________"],["DATE SENT",docDate]].map(([lbl,val])=>(
+            <div key={lbl}><div style={{fontSize:9,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>{lbl}</div><div style={{fontWeight:600,borderBottom:"1px solid #ccc",paddingBottom:3}}>{val}</div></div>
+          ))}
+        </div>
+        <div style={{fontSize:10,color:"#888",marginTop:8,fontStyle:"italic"}}>File with the claim referenced below. A fully executed copy is available upon request from Beshert's office: (216) 326-ROOF · beshert@thebeshertgroup.com</div>
+      </div>
+
+      {/* Policyholder & Claim */}
+      <div style={{padding:"14px 20px",borderBottom:"2px solid #ece9f4"}}>
+        <div style={{borderLeft:"4px solid #8b7cb4",paddingLeft:12,color:"#1a2744",fontWeight:700,fontSize:12,letterSpacing:1,marginBottom:12}}>POLICYHOLDER & CLAIM REFERENCE</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,fontSize:12}}>
+          {[["Policyholder name",client?.name||""],["Policy number",insFields?.policyNum||""],["Claim number",insFields?.claimNum||""],["Date of loss",insFields?.dateOfLoss||""],["Property address (subject of claim)",`${client?.address||""}, ${client?.city||""}${client?.state?`, ${client.state}`:""}`],["Adjuster name",insFields?.adjuster||""]].map(([lbl,val])=>(
+            <div key={lbl} style={{borderBottom:"1px solid #e2e8f0",paddingBottom:6}}>
+              <div style={{fontSize:10,color:"#888",marginBottom:2}}>{lbl}</div>
+              <div style={{fontWeight:600,minHeight:18}}>{val||<span style={{color:"#ccc"}}>_______________</span>}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Beshert Contact */}
+      <div style={{padding:"14px 20px",borderBottom:"1px solid #e2e8f0",background:"#ece9f4"}}>
+        <div style={{borderLeft:"4px solid #8b7cb4",paddingLeft:12,color:"#1a2744",fontWeight:700,fontSize:12,letterSpacing:1,marginBottom:10}}>BESHERT DESIGNATED CONTACT FOR THIS CLAIM</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,fontSize:12}}>
+          {[["Name","Carlito"],["Company","Beshert Roofing Redevelopment Group"],["Office","(216) 326-ROOF"],["Mobile","440-554-5332"],["Email","beshert@thebeshertgroup.com"],["Website","www.thebeshertgroup.com"]].map(([lbl,val])=>(
+            <div key={lbl}><span style={{color:"#888"}}>{lbl}: </span><strong>{val}</strong></div>
+          ))}
+        </div>
+      </div>
+
+      {/* Authorization text */}
+      <div style={{padding:"14px 20px",borderBottom:"1px solid #e2e8f0"}}>
+        <div style={{borderLeft:"4px solid #8b7cb4",paddingLeft:12,color:"#1a2744",fontWeight:700,fontSize:12,letterSpacing:1,marginBottom:10}}>AUTHORIZATION — PLEASE READ AND RETAIN</div>
+        <div style={{fontSize:12,lineHeight:1.8,color:"#333"}}>
+          I, <strong>{client?.name||"_________________________"}</strong>, the named policyholder on the account referenced above, hereby authorize and direct <strong>{insFields?.insurer||"_________________________"}</strong> (insurance company) to communicate directly with, release claim information to, and accept documentation from: <strong>Carlito · Beshert Roofing Redevelopment Group</strong> · (216) 326-ROOF · beshert@thebeshertgroup.com
+        </div>
+        <div style={{fontSize:12,lineHeight:1.8,color:"#333",marginTop:8}}>
+          I expressly authorize Beshert Roofing Redevelopment Group to speak on my behalf regarding all matters related to the contents, status, scope, and documentation and physical condition findings related to the above-referenced insurance claim. This authorization specifically permits Beshert to:
+        </div>
+        <div style={{marginTop:8,paddingLeft:4}}>
+          {["Speak directly with insurance representatives, adjusters, and supervisors on my behalf regarding the claim","Discuss the status, details, scope of loss, and findings of the claim identified above","Receive copies of adjuster reports, scope of loss documents, and Explanation of Benefits summaries","Submit estimates, inspection reports, photographs, and supplemental documentation in support of this claim","Schedule and coordinate property inspections with your adjuster or field representative","Request re-inspection or supervisory review if findings are disputed"].map((item,i)=>(
+            <div key={i} style={{fontSize:12,color:"#333",marginBottom:4}}>✓ {item}</div>
+          ))}
+        </div>
+      </div>
+
+      {/* Authorization period + Notice */}
+      <div style={{padding:"12px 20px",borderBottom:"1px solid #e2e8f0",background:"#fffbe8",borderLeft:"4px solid #C9A84C"}}>
+        <div style={{fontSize:12,color:"#7a5800",lineHeight:1.7}}><strong>Authorization Period:</strong> This authorization is effective as of the date signed below and remains in effect through the earlier of: (a) written revocation delivered to Beshert Roofing Redevelopment Group; (b) completion of the approved scope of work at the property; or (c) <strong>12 months</strong> from the date of signing. It does not assign, transfer, or convey any insurance benefits, proceeds, or policy rights.</div>
+      </div>
+      <div style={{padding:"10px 20px",borderBottom:"2px solid #e2e8f0",background:"#f8f9fb"}}>
+        <div style={{fontSize:11.5,color:"#555",lineHeight:1.7}}><strong>Notice to Insurer:</strong> This authorization does not grant Beshert Roofing Redevelopment Group authority to negotiate, settle, or accept payment on behalf of the policyholder, nor does it constitute an Assignment of Benefits. All claim decisions and payments remain under the policyholder's control.</div>
+      </div>
+
+      {/* Signature */}
+      <div style={{padding:"16px 20px",borderBottom:"1px solid #e2e8f0"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:30}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:11,color:"#8b7cb4",textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Policyholder Signature</div>
+            {signature?<img src={signature} alt="" style={{height:50,maxWidth:"100%",objectFit:"contain",marginBottom:4,display:"block"}}/>:<div style={{borderBottom:"1.5px solid #999",height:50,marginBottom:4}}/>}
+            {signatureTimestamp&&<div style={{fontSize:9.5,color:"#888",fontStyle:"italic"}}>✓ Digitally signed: {signatureTimestamp}</div>}
+            {signatureIP&&<div style={{fontSize:9,color:"#aaa"}}>IP: {signatureIP}</div>}
+            <div style={{borderBottom:"1.5px solid #ccc",marginTop:12,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Print Name · Date</div>
+            <div style={{marginTop:10,fontSize:11,color:"#666",fontStyle:"italic"}}>Date of Birth (for carrier identity verification):</div>
+            <div style={{borderBottom:"1.5px solid #ccc",marginTop:6,marginBottom:4,height:28}}/><div style={{fontSize:10,color:"#aaa"}}>MM / DD / YYYY — SSN is not collected on this form.</div>
+          </div>
+          <div>
+            <div style={{fontWeight:700,fontSize:11,color:"#8b7cb4",textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Beshert Representative</div>
+            <div style={{borderBottom:"1.5px solid #999",height:50,marginBottom:4}}/>
+            <div style={{borderBottom:"1.5px solid #ccc",marginTop:12,marginBottom:4,height:28,display:"flex",alignItems:"flex-end"}}><span style={{fontSize:12,fontWeight:600}}>Carlito · Beshert Roofing Redevelopment Group</span></div>
+            <div style={{borderBottom:"1.5px solid #ccc",marginTop:10,marginBottom:4,height:28}}/><div style={{fontSize:11,color:"#666"}}>Date</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{background:"#1a2744",color:"#fff",padding:"7px 20px",fontSize:10,textAlign:"center",letterSpacing:1.5,borderRadius:"0 0 6px 6px"}}>
+        ISSUED BY BESHERT, A QUALIFIED 501(C)(3) NONPROFIT ORGANIZATION · www.thebeshertgroup.com
+      </div>
+    </div>
+  );
+}
+
 function WorkAuthPreview({roofingLogo,churchLogo,client,job,contractNumber,docDate,preparedBy,totalPrice,paymentSplit,signature,signatureTimestamp,signatureIP,scopeItems}) {
   return (
     <div id="work-auth-area" style={{maxWidth:820,margin:"0 auto",fontFamily:"Georgia,serif",fontSize:13,color:"#1a1a2a",background:"#fff",position:"relative"}}>
+      <Watermark churchLogo={churchLogo}/>
       <style>{`@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}#work-auth-area{max-width:100%;}}`}</style>
       {/* Header */}
       <div style={{background:"#1a2744",color:"#fff",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderRadius:"6px 6px 0 0"}}>
@@ -815,6 +927,10 @@ function BeshertBuilder() {
   const [signatureTimestamp,setSignatureTimestamp]=useState(null);
   const [signatureIP,       setSignatureIP]       =useState(null);
   const [showWorkAuth,      setShowWorkAuth]      =useState(false);
+  const [showLOA,           setShowLOA]           =useState(false);
+  const [isListening,       setIsListening]       =useState(false);
+  const [workAuthGenerated, setWorkAuthGenerated] =useState(false);
+  const [loaGenerated,      setLoaGenerated]      =useState(false);
   const sigCanvasRef=useRef(null);
   const sigDrawing=useRef(false);
   const [clientEmail,setClientEmail]=useState("");
@@ -908,6 +1024,19 @@ function BeshertBuilder() {
   const job             = JOBS[jobType];
   const baseParsedTotal = parseFloat(String(totalPrice).replace(/[^0-9.]/g,""))||0;
 
+  // ── Talk to text ──
+  const startListening = (onResult) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){ addToast("Voice input not supported in this browser","error"); return; }
+    if(isListening) return;
+    const rec = new SR();
+    rec.continuous = false; rec.interimResults = false; rec.lang = "en-US";
+    rec.onresult = (e) => { onResult(e.results[0][0].transcript); setIsListening(false); };
+    rec.onerror  = ()  => { addToast("Voice input failed — try again","warning"); setIsListening(false); };
+    rec.onend    = ()  => setIsListening(false);
+    rec.start(); setIsListening(true);
+  };
+
   // ── Save reminder (must be after isSaved + baseParsedTotal) ──
   const hasUnsavedData = !isSaved && (client.name.trim().length>0 || client.address.trim().length>0 || baseParsedTotal>0);
   useEffect(()=>{
@@ -995,7 +1124,7 @@ function BeshertBuilder() {
       status,measurements,clientEmail,isInsuranceJob,insFields,
       materials:materials.map(m=>m.text),
       signature:signature||null, signatureTimestamp:signatureTimestamp||null, signatureIP:signatureIP||null,
-      notes, cloudSynced:false
+      notes, workAuthGenerated, loaGenerated, cloudSynced:false
     };
     const res = await storage.save(est);
     setIsSaved(true);
@@ -1042,6 +1171,8 @@ function BeshertBuilder() {
     setSignatureTimestamp(est.signatureTimestamp||null);
     setSignatureIP(est.signatureIP||null);
     setNotes(est.notes||"");
+    setWorkAuthGenerated(est.workAuthGenerated||false);
+    setLoaGenerated(est.loaGenerated||false);
     setIsInsuranceJob(est.isInsuranceJob||false);
     setInsFields(est.insFields||{insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     setIsEditing(true);
@@ -1099,7 +1230,7 @@ function BeshertBuilder() {
     setStatus("Pending"); setMeasurements({squares:"",pitch:"4/12",layers:"1",decking:"Good"});
     setMaterials([]); setNewMaterialText(""); setSignature(null); setSignatureTimestamp(null); setSignatureIP(null); setClientEmail("");
     setValidationErrors([]);
-    setNotes(""); setProposalMode("quick"); setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
+    setNotes(""); setWorkAuthGenerated(false); setLoaGenerated(false); setProposalMode("quick"); setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     localStorage.removeItem(DRAFT_KEY);
   };
 
@@ -1214,6 +1345,14 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
       return [...prev,inv];
     });
     setTimeout(()=>setBInvSaved(false),3000);
+  };
+
+  const handleLoadAndPreview = async (cnum) => {
+    await handleLoadForEdit(cnum);
+    setShowPreview(true);
+    setStep(5);
+    setMode("proposal");
+    setAppMode("form");
   };
 
   const handleLoadBillingInvoice = (inv) => {
@@ -1421,7 +1560,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                               const q=dashboardSearch.toLowerCase();
                               if(q&&![e.contractNumber,e.client?.name,e.client?.address].join(" ").toLowerCase().includes(q))return false;
                               return dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter;
-                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{if(e.docType==="billing_invoice"){handleLoadBillingInvoice(e);}else{handleLoadForEdit(e.contractNumber);setMode("proposal");setProposalMode("full");setAppMode("form");}}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>
+                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{if(e.docType==="billing_invoice"){handleLoadBillingInvoice(e);}else{handleLoadAndPreview(e.contractNumber);}}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>
                                   {e.contractNumber}
                                   {unsyncedIds.includes(e.contractNumber)
                                     ? <span title="Local only" style={{marginLeft:6,fontSize:10}}>📱</span>
@@ -1506,7 +1645,13 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                     </div>
                   </div>
                 </div>
-                <div style={{marginBottom:14}}><label style={S.label}>Internal Notes <span style={{fontWeight:400,color:"#888"}}>(not printed)</span></label><input style={S.input} placeholder="e.g. call after 3pm · gate code 1234" value={notes} onChange={e=>setNotes(e.target.value)}/></div>
+                <div style={{marginBottom:14}}>
+  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+    <label style={S.label}>Internal Notes <span style={{fontWeight:400,color:"#888"}}>(not printed)</span></label>
+    <button onClick={()=>startListening(t=>setNotes(p=>p?p+" "+t:t))} style={{...S.btn(isListening?"#e74c3c":"#888"),fontSize:10,padding:"3px 10px"}}>{isListening?"🔴 Listening…":"🎤 Voice"}</button>
+  </div>
+  <input style={S.input} placeholder="e.g. call after 3pm · gate code 1234" value={notes} onChange={e=>setNotes(e.target.value)}/>
+</div>
                 {/* Measurement Strip */}
                 <div style={{...S.card,background:"#f8f7fb",border:`1px solid ${PURPLE_LIGHT}`,marginBottom:14}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -1714,8 +1859,11 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
 
                 {/* Internal Notes */}
                 <div style={S.card}>
-                  <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK,marginBottom:4}}>📝 Internal Notes <span style={{fontWeight:400,fontSize:11,color:"#888"}}>— not printed on estimate</span></div>
-                  <textarea style={{...S.input,height:80,resize:"vertical",fontFamily:"Georgia,serif"}} placeholder="e.g. Homeowner prefers calls after 3pm · Adjuster is difficult, document everything · Gate code 1234" value={notes} onChange={e=>setNotes(e.target.value)}/>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                    <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK}}>📝 Internal Notes <span style={{fontWeight:400,fontSize:11,color:"#888"}}>— not printed</span></div>
+                    <button onClick={()=>startListening(t=>setNotes(p=>p?p+" "+t:t))} style={{...S.btn(isListening?"#e74c3c":"#888"),fontSize:10,padding:"4px 12px"}}>{isListening?"🔴 Listening…":"🎤 Voice"}</button>
+                  </div>
+                  <textarea style={{...S.input,height:80,resize:"vertical",fontFamily:"Georgia,serif"}} placeholder="e.g. Homeowner prefers calls after 3pm · Adjuster is difficult · Gate code 1234" value={notes} onChange={e=>setNotes(e.target.value)}/>
                 </div>
 
                 {validationErrors.length>0&&(<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"12px 16px",marginBottom:8}}>{validationErrors.map((e,i)=><div key={i} style={{fontSize:12,color:"#c0392b"}}>⚠ {e}</div>)}</div>)}
@@ -1941,6 +2089,10 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                   {/* Project Description */}
                   <div style={{marginBottom:20}}>
                     <label style={S.label}>Project Description</label>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:11,color:"#888",fontStyle:"italic"}}>Optional — prints on estimate</span>
+                      <button onClick={()=>startListening(t=>setPriceDesc(p=>p?p+" "+t:t))} style={{...S.btn(isListening?"#e74c3c":"#888"),fontSize:10,padding:"3px 10px"}}>{isListening?"🔴 Listening…":"🎤 Voice"}</button>
+                    </div>
                     <textarea style={{...S.input,height:90,resize:"vertical"}} placeholder="Brief description of the work to be performed…" value={priceDesc} onChange={e=>setPriceDesc(e.target.value)}/>
                   </div>
 
@@ -2032,24 +2184,70 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                         : <div style={{fontSize:13,color:"#888"}}>No contract number yet — save to generate.</div>
                       }
                     </div>
-                    <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-                      <button style={S.btn(PURPLE_DARK)} onClick={()=>{setShowPreview(false);setStep(4);}}>← Back</button>
-                      {!isSaved
-                        ? <button className={hasUnsavedData?"save-pulse":""} style={{...S.btn(isEditing?"#e8a020":isSaved?"#159c59":HEADER_BG,isEditing?NAVY:"#fff"),transition:"all 0.3s"}} onClick={()=>{if(validate())handleSaveEstimate();}} disabled={saveStatus==="saving"}>
-                            {saveStatus==="saving" ? "⏳ Saving…" : isEditing ? "💾 Save Revised Estimate" : "💾 Save & Generate Contract #"}
-                          </button>
-                        : <div style={{...S.tag("#27ae60"),fontSize:12,padding:"6px 12px"}}>
-                            {saveStatus==="saved-local" ? "✓ Saved Locally" : "✓ Saved to Google Sheets"}
+                    {/* REMINDER BANNERS */}
+                    {(status==="Approved"||status==="Scheduled")&&!(signature&&workAuthGenerated)&&(
+                      <div style={{background:"#fff8e8",border:"1px solid #f0d080",borderLeft:"4px solid #C9A84C",borderRadius:8,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                        <div>
+                          <div style={{fontSize:12,color:"#7a5800",fontWeight:600}}>📋 Work Authorization not yet complete</div>
+                          <div style={{fontSize:11,color:"#9a7820",marginTop:2}}>
+                            {!signature&&!workAuthGenerated?"Needs homeowner signature and document generation.":!signature?"Needs homeowner signature.":"Needs to be generated — tap Generate Now."}
                           </div>
-                      }
-                      <button style={S.btn(NAVY)} onClick={()=>window.print()}>🖨 Print / PDF</button>
-                      <button style={S.btn(isPdfLoading?"#888":PURPLE_DARK)} onClick={handleDownloadPDF} disabled={isPdfLoading}>
-                        {isPdfLoading ? "⏳ Generating…" : "⬇ Download PDF"}
-                      </button>
-                      <button style={S.btn(signature?"#27ae60":PURPLE_DARK)} onClick={()=>setShowSigPad(true)}>{signature?"✍ Re-Sign":"✍ Capture Signature"}</button>
-                      {!signature&&<div style={{fontSize:10,color:"#e67e22",fontWeight:700,marginTop:4,textAlign:"center"}}>⚠ Signature needed before printing</div>}
-                      <button style={{...S.btn("#2c3e50"),marginTop:4}} onClick={()=>setShowWorkAuth(true)}>📋 Work Authorization</button>
-                      <button style={S.btn("#2980b9")} onClick={()=>{setClientEmail(client.email||clientEmail||"");setShowEmailModal(true);}}>✉ Email to Client</button>
+                        </div>
+                        <button style={{...S.btn(GOLD,NAVY),fontSize:11,padding:"5px 14px"}} onClick={()=>{setShowWorkAuth(true);setWorkAuthGenerated(true);}}>Generate Now →</button>
+                      </div>
+                    )}
+                    {isInsuranceJob&&!(signature&&loaGenerated)&&(
+                      <div style={{background:"#fff0e8",border:"1px solid #f0a060",borderLeft:"4px solid #e67e22",borderRadius:8,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                        <div>
+                          <div style={{fontSize:12,color:"#7a3800",fontWeight:600}}>⚡ Letter of Authorization not yet complete</div>
+                          <div style={{fontSize:11,color:"#9a5020",marginTop:2}}>
+                            {!signature&&!loaGenerated?"Needs homeowner signature and document generation.":!signature?"Needs homeowner signature.":"Needs to be generated and sent to insurer."}
+                          </div>
+                        </div>
+                        <button style={{...S.btn("#e67e22"),fontSize:11,padding:"5px 14px"}} onClick={()=>{setShowLOA(true);setLoaGenerated(true);}}>Generate Now →</button>
+                      </div>
+                    )}
+
+                    {/* STEP 1 — SIGNATURE */}
+                    <div style={{background:signature?"#f0fdf4":"#fff8e8",border:`2px solid ${signature?"#27ae60":"#f0d080"}`,borderRadius:10,padding:"16px 20px",marginBottom:14}}>
+                      {signature ? (
+                        <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+                          <span style={{fontSize:28}}>✅</span>
+                          <div style={{flex:1}}>
+                            <div style={{fontWeight:700,fontSize:14,color:"#27ae60"}}>Signed by {client.name||"Homeowner"}</div>
+                            {signatureTimestamp&&<div style={{fontSize:11,color:"#888",marginTop:2}}>{signatureTimestamp}</div>}
+                            {signatureIP&&<div style={{fontSize:10,color:"#aaa"}}>IP: {signatureIP}</div>}
+                          </div>
+                          <button onClick={()=>setShowSigPad(true)} style={{...S.btn("#888"),fontSize:11}}>✍ Re-Sign</button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{fontWeight:700,fontSize:15,color:"#7a5800",marginBottom:4}}>✍ Step 1 — Get {client.name||"the homeowner"} to Sign</div>
+                          <div style={{fontSize:12,color:"#7a5800",marginBottom:14,lineHeight:1.6}}>Have the homeowner review this estimate and sign before printing. Their signature confirms they have read and agreed to the scope, pricing, and payment terms.</div>
+                          <button className="save-pulse" style={{...S.btn(GOLD,NAVY),fontSize:14,padding:"12px 28px",fontWeight:700}} onClick={()=>setShowSigPad(true)}>✍ Capture Signature</button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* STEP 2 — DOCUMENT ACTIONS */}
+                    <div style={{background:WHITE,border:`1px solid ${PURPLE_LIGHT}`,borderRadius:10,padding:"14px 18px"}}>
+                      <div style={{fontWeight:700,fontSize:10,color:"#888",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>Step 2 — Document Actions</div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+                        {!isSaved
+                          ? <button className={hasUnsavedData?"save-pulse":""} style={{...S.btn(isEditing?"#e8a020":HEADER_BG,isEditing?NAVY:"#fff"),transition:"all 0.3s"}} onClick={()=>{if(validate())handleSaveEstimate();}} disabled={saveStatus==="saving"}>
+                              {saveStatus==="saving"?"⏳ Saving…":isEditing?"💾 Save Revised":"💾 Save Estimate"}
+                            </button>
+                          : <div style={{...S.tag("#27ae60"),fontSize:12,padding:"6px 12px"}}>{saveStatus==="saved-local"?"✓ Saved Locally":"✓ Saved"}</div>
+                        }
+                        <button style={S.btn(NAVY)} onClick={()=>window.print()}>🖨 Print</button>
+                        <button style={S.btn(isPdfLoading?"#888":PURPLE_DARK)} onClick={handleDownloadPDF} disabled={isPdfLoading}>{isPdfLoading?"⏳…":"⬇ PDF"}</button>
+                        <button style={S.btn("#2980b9")} onClick={()=>{setClientEmail(client.email||clientEmail||"");setShowEmailModal(true);}}>✉ Email</button>
+                        <button style={S.btn(PURPLE_DARK)} onClick={()=>{setShowPreview(false);setStep(4);}}>← Edit</button>
+                      </div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",borderTop:`1px solid ${PURPLE_LIGHT}`,paddingTop:10}}>
+                        <button style={S.btn("#2c3e50")} onClick={()=>{setShowWorkAuth(true);setWorkAuthGenerated(true);}}>📋 Work Authorization</button>
+                        {isInsuranceJob&&<button style={S.btn("#e67e22")} onClick={()=>{setShowLOA(true);setLoaGenerated(true);}}>📄 Letter of Authorization</button>}
+                      </div>
                     </div>
                   </div>
 
@@ -2303,6 +2501,31 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           </div>
         )}
 
+        {/* LOA MODAL */}
+        {showLOA&&(
+          <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16,overflowY:"auto"}}>
+            <div style={{background:"#fff",borderRadius:12,maxWidth:860,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)",marginTop:20,marginBottom:20}}>
+              <div style={{background:NAVY,borderRadius:"12px 12px 0 0",padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontWeight:700,fontSize:16,color:GOLD}}>📄 Letter of Authorization</div>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginTop:2}}>Third-Party Authorization to Communicate with Insurance Provider</div>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>window.print()} style={{...S.btn(GOLD,NAVY),fontSize:12}}>🖨 Print</button>
+                  <button onClick={()=>setShowLOA(false)} style={{background:"rgba(255,255,255,0.15)",border:"none",color:"#fff",fontSize:20,cursor:"pointer",borderRadius:6,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                </div>
+              </div>
+              <div style={{padding:20}}>
+                <LOAPreview
+                  roofingLogo={ROOFING_LOGO} churchLogo={CHURCH_LOGO} client={client} insFields={insFields}
+                  contractNumber={contractNumber} docDate={docDate}
+                  signature={signature} signatureTimestamp={signatureTimestamp} signatureIP={signatureIP}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* WORK AUTH MODAL */}
         {showWorkAuth&&(
           <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16,overflowY:"auto"}}>
@@ -2427,10 +2650,15 @@ All of this prints on the estimate so the homeowner can see exactly how the numb
     id:"signature",
     title:"Capturing a Signature",
     icon:"✍️",
-    content:`After you build an estimate and click <b>Save & Preview</b>, you'll see a button that says <b>✍ Capture Signature</b>.
-Tap it. A signature box opens. Hand the phone or tablet to the homeowner and have them sign with their finger. When they're done, tap <b>Save Signature</b>.
-Their signature now appears on the printed estimate in the signature line. You can then print, download as a PDF, or email it to them — all with their signature already on it.
-If you need to get a new signature (wrong person, mistake), tap <b>✍ Re-Sign</b> and do it again.`
+    content:`After you save an estimate, the preview screen shows <b>Step 1 — Get the homeowner's signature</b>. This is the first thing to do before printing.
+
+Tap <b>✍ Capture Signature</b>. A box opens with a brief statement explaining what the homeowner is agreeing to. Hand them the phone and have them sign with their finger. Tap <b>Save Signature</b>.
+
+The tool automatically records the <b>date, time, and IP address</b> when the signature is saved. This prints on the estimate beneath the signature line and makes the document legally defensible under Ohio contract law.
+
+Once signed, the Step 1 card turns green with a ✅ confirmation. Then use <b>Step 2 — Document Actions</b> to print, download, or email.
+
+If you need a fresh signature, tap <b>Re-Sign</b> at any time.`
   },
   {
     id:"email",
@@ -2448,6 +2676,44 @@ Your email app opens with everything already filled in — the subject line, the
 <b>Estimate</b> — Given to the homeowner <i>before</i> the job starts. It shows what you're going to do and what it will cost. It has the full scope of work, legal pages, warranty, and signature line.
 <b>Billing Invoice</b> — Sent to the homeowner <i>after</i> the job is done (or for a deposit). It shows what was done and what they owe. It's a clean, simple document — just the description of services and the total.
 To create a billing invoice, tap the <b>Invoice</b> tab at the top. You can load a saved estimate to auto-fill the client info and line items, or start from scratch.`
+  },
+  {
+    id:"voiceinput",
+    title:"Talk to Text — Voice Input",
+    icon:"🎤",
+    content:`You can speak instead of type in three places in the tool — the Notes field in Quick Estimate, the Notes field in Full Estimate, and the Price Description field in Step 4.
+
+Tap the <b>🎤 Voice</b> button next to the field. It turns red and shows <b>🔴 Listening…</b> Speak clearly. When you stop, your words appear in the field automatically. If there is already text in the field, the new words are added to the end.
+
+<b>Works best:</b> iPhone with Safari, Android with Chrome. Sit in the truck or inside the house — outdoor construction noise can affect accuracy.
+
+<b>If it does not work:</b> Your browser may not support voice input. The tool will show a message. Type normally in that case.
+
+<b>Tip:</b> Use it for the Notes field. Say "gate code 1234" or "owner prefers calls after 3pm" without typing on a small screen.`
+  },
+  {
+    id:"workauth",
+    title:"Work Authorization",
+    icon:"📋",
+    content:`The Work Authorization is a separate document from the estimate. The estimate describes what you'll do and what it costs. The Work Authorization is the homeowner's official permission for Beshert to begin the physical work.
+
+After saving an estimate, go to the preview screen. In the <b>Step 2 — Document Actions</b> section, tap <b>📋 Work Authorization</b>. A full branded document opens with the property info, job description, and a 4-point authorization agreement already filled in.
+
+Have the homeowner sign it — the signature from Step 1 is automatically included. Then tap <b>Print</b> to print it separately.
+
+<b>When to use it:</b> Get the estimate signed first (Step 1). Then generate the Work Authorization on or before the day work begins. Keep a signed copy for your records.`
+  },
+  {
+    id:"loa",
+    title:"Letter of Authorization (Insurance Jobs)",
+    icon:"📄",
+    content:`For insurance jobs, you need a Letter of Authorization (LOA) to communicate with the homeowner's insurance company on their behalf. Without it, the insurance company cannot legally speak to you about the claim.
+
+The LOA is only available when the <b>Insurance Job</b> toggle is turned on. After saving the estimate, go to the preview screen. In Step 2, tap <b>📄 Letter of Authorization</b>. The document opens pre-filled with the insurance company name, claim number, policy number, adjuster name, and property address — all pulled from what you entered in Step 1.
+
+Have the homeowner sign it. Then fax or email it directly to the insurance company's claims department. The document includes a section at the top for the fax number, adjuster name, and date sent.
+
+<b>Important:</b> This document authorizes Beshert to communicate about the claim. It does not give Beshert the right to accept payment or settle the claim on the homeowner's behalf.`
   },
   {
     id:"status",
