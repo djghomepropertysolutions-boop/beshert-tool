@@ -122,7 +122,11 @@ const JOBS = {
   gutters:{label:"Gutters / Soffit",icon:"🌧️",color:"#8e44ad",defaultSplit:"50/50",
     duration:"Approximately 2–4 working days (weather permitting).",
     warranty:["15-Year Workmanship/Labor Warranty","Standard Manufacturer Material Warranty Applies","Extended Warranty Available upon request"],
-    scope:["Install .027 gauge aluminum gutter and downspout.","Install new vinyl soffit including rake edges.","Replace any rotted fascia board as needed; billed separately at $3.70/LF.","Clean up and haul away all debris (applies to entire home gutters)."]}
+    scope:["Install .027 gauge aluminum gutter and downspout.","Install new vinyl soffit including rake edges.","Replace any rotted fascia board as needed; billed separately at $3.70/LF.","Clean up and haul away all debris (applies to entire home gutters)."]},
+  siding:{label:"Siding",icon:"🏗",color:"#2980b9",defaultSplit:"50/50",
+    duration:"Approximately 3–5 working days (weather permitting).",
+    warranty:["15-Year Workmanship/Labor Warranty","Standard Manufacturer Material Warranty Applies","Extended Warranty Available upon request"],
+    scope:["Remove and dispose of existing siding.","Install moisture barrier / house wrap.","Install new siding per specifications.","Install all necessary trim, J-channel, and accessories.","Caulk and seal all penetrations and openings.","Clean up and haul away all debris."]}
 };
 
 // ── Legal Content ─────────────────────────────────────────────────────────────
@@ -138,6 +142,14 @@ const EXCLUSIONS = ["Permits, testing, or engineering fees not included unless s
 
 // ── Print CSS ─────────────────────────────────────────────────────────────────
 const printCSS = `@media print{body *{visibility:hidden!important}#print-area,#print-area *{visibility:visible!important}#print-area{position:absolute!important;left:0!important;top:0!important;width:100%!important}@page{margin:0.5in}}`;
+const mobileCSS = `@media(max-width:700px){
+  .grid-4{grid-template-columns:1fr 1fr!important}
+  .grid-3{grid-template-columns:1fr 1fr!important}
+  .grid-2{grid-template-columns:1fr!important}
+  .top-bar-btns{flex-wrap:wrap!important;gap:6px!important}
+  input,select,textarea{font-size:16px!important}
+  button{min-height:40px!important}
+}`;
 
 // ── Shared Styles ─────────────────────────────────────────────────────────────
 const S = {
@@ -244,7 +256,7 @@ function ContractBadge({contractNumber,isRevised}) {
 }
 
 // ── ProposalPreview (MODIFIED) ────────────────────────────────────────────────
-function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,preparedBy,pm,scopeItems,finalPages,totalPrice,priceDesc,optItems,paymentSplit,contractNumber,linkedContract,isRevised,additionalJobs,paymentStructure,customPayments,signature,status,measurements,materials}) {
+function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,preparedBy,pm,scopeItems,finalPages,totalPrice,priceDesc,optItems,paymentSplit,contractNumber,linkedContract,isRevised,additionalJobs,paymentStructure,customPayments,signature,status,measurements,materials,isInsuranceJob,insFields}) {
   const addJobsTotal = (additionalJobs||[]).reduce((s,j)=>s+(parseFloat(String(j.price||"0").replace(/[^0-9.]/g,""))||0),0);
   const grandTotal   = totalPrice + addJobsTotal;
   const addonTotal   = (optItems||[]).filter(o=>o.includeInTotal&&parseFloat(o.price)>0).reduce((s,o)=>s+parseFloat(o.price),0);
@@ -306,6 +318,24 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
             {measurements.pitch&&<div style={{fontSize:12}}><span style={{color:"#888"}}>Pitch: </span><strong>{measurements.pitch}</strong></div>}
             {measurements.layers&&<div style={{fontSize:12}}><span style={{color:"#888"}}>Layers: </span><strong>{measurements.layers}</strong></div>}
             {measurements.decking&&<div style={{fontSize:12}}><span style={{color:"#888"}}>Decking: </span><strong>{measurements.decking}</strong></div>}
+          </div>
+        )}
+        {/* Insurance Claim Info */}
+        {isInsuranceJob && insFields && (
+          <div style={{background:"#fff8e8",padding:"14px 20px",borderBottom:`2px solid #f0d080`,borderLeft:"4px solid #C9A84C"}}>
+            <div style={{fontWeight:700,fontSize:11,color:"#7a5800",textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>⚡ Insurance Claim Details</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,fontSize:11.5}}>
+              {insFields.insurer&&<div><span style={{color:"#888"}}>Insurer: </span><strong>{insFields.insurer}</strong></div>}
+              {insFields.claimNum&&<div><span style={{color:"#888"}}>Claim #: </span><strong>{insFields.claimNum}</strong></div>}
+              {insFields.policyNum&&<div><span style={{color:"#888"}}>Policy #: </span><strong>{insFields.policyNum}</strong></div>}
+              {insFields.adjuster&&<div><span style={{color:"#888"}}>Adjuster: </span><strong>{insFields.adjuster}</strong></div>}
+              {insFields.dateOfLoss&&<div><span style={{color:"#888"}}>Date of Loss: </span><strong>{insFields.dateOfLoss}</strong></div>}
+              {insFields.deductible&&<div><span style={{color:"#888"}}>Deductible: </span><strong>${insFields.deductible}</strong></div>}
+              {insFields.acv&&<div><span style={{color:"#888"}}>ACV: </span><strong>${insFields.acv}</strong></div>}
+              {insFields.rcv&&<div><span style={{color:"#888"}}>RCV: </span><strong>${insFields.rcv}</strong></div>}
+              {insFields.depreciation&&<div><span style={{color:"#888"}}>Depreciation: </span><strong>${insFields.depreciation}</strong></div>}
+              {insFields.supplementNum&&<div><span style={{color:"#888"}}>Supplement #: </span><strong>{insFields.supplementNum}</strong></div>}
+            </div>
           </div>
         )}
         {/* Scope — Primary Job */}
@@ -610,6 +640,12 @@ export default function BeshertBuilder() {
   // ── NEW: Add-On Library ──
   const [addonLibrary, setAddonLibrary] = useState([]);
 
+  // ── V13 Insurance + Email FROM ──
+  const [isInsuranceJob, setIsInsuranceJob] = useState(false);
+  const [insFields, setInsFields] = useState({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
+  const [sendFromEmail, setSendFromEmail] = useState("beshert@thebeshertgroup.com");
+  const [dashboardSearch, setDashboardSearch] = useState("");
+
   // ── V12 Billing Invoice State ──
   const [bInvNum,    setBInvNum]    = useState("");
   const [bInvDate,   setBInvDate]   = useState(today());
@@ -702,6 +738,8 @@ export default function BeshertBuilder() {
         setClientEmail(est.clientEmail||"");
         setMaterials(est.materials?.map((t,i)=>({id:i,text:t,on:true}))||[]);
         setSignature(est.signature||null);
+        setIsInsuranceJob(est.isInsuranceJob||false);
+        setInsFields(est.insFields||{insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
         setIsEditing(true);
         if(est.scopeItems&&Array.isArray(est.scopeItems)&&est.scopeItems.length>0){
           setScopeItems(est.scopeItems.map((text,i)=>({id:i,text,on:true})));
@@ -797,7 +835,7 @@ export default function BeshertBuilder() {
       additionalJobs,contractLink:link,
       scopeItems:scopeItems.filter(s=>s.on).map(s=>s.text),
       finalPageIds:finalPages.filter(fp=>fp.on).map(fp=>fp.id),
-      status,measurements,clientEmail,
+      status,measurements,clientEmail,isInsuranceJob,insFields,
       materials:materials.map(m=>m.text),
       signature:signature||null
     };
@@ -835,6 +873,8 @@ export default function BeshertBuilder() {
     setClientEmail(est.clientEmail||"");
     setMaterials(est.materials?.map((t,i)=>({id:i,text:t,on:true}))||[]);
     setSignature(est.signature||null);
+    setIsInsuranceJob(est.isInsuranceJob||false);
+    setInsFields(est.insFields||{insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     setIsEditing(true);
     setIsSaved(false);
     setSaveStatus("");
@@ -890,6 +930,7 @@ export default function BeshertBuilder() {
     setStatus("Pending"); setMeasurements({squares:"",pitch:"4/12",layers:"1",decking:"Good"});
     setMaterials([]); setNewMaterialText(""); setSignature(null); setClientEmail("");
     setValidationErrors([]);
+    setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     localStorage.removeItem(DRAFT_KEY);
   };
 
@@ -925,14 +966,15 @@ export default function BeshertBuilder() {
       s.id="brrg-print-css";
       s.textContent=printCSS;
       document.head.appendChild(s);
+      const m=document.createElement("style");m.id="mobile-css";if(!document.getElementById("mobile-css")){m.textContent=mobileCSS;document.head.appendChild(m);}
     }
   },[]);
 
   useEffect(()=>{
     if(!client.name&&!totalPrice)return;
-    try{const draft={client,lastName,houseNum,camLink,jobType,paymentSplit,paymentStructure,customPayments,preparedBy,pm,docDate,totalPrice,priceDesc,optItems,additionalJobs,contractNumber,status,measurements,materials,clientEmail,scopeItems:scopeItems.map(s=>s.text)};localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));}catch(e){}
+    try{const draft={client,lastName,houseNum,camLink,jobType,paymentSplit,paymentStructure,customPayments,preparedBy,pm,docDate,totalPrice,priceDesc,optItems,additionalJobs,contractNumber,status,measurements,materials,clientEmail,scopeItems:scopeItems.map(s=>s.text),isInsuranceJob,insFields};localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));}catch(e){}
   },[client,lastName,houseNum,jobType,totalPrice,scopeItems,status,measurements,materials,clientEmail]);
-  const restoreDraft=()=>{try{const d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"{}");if(d.client)setClient(d.client);if(d.lastName)setLastName(d.lastName);if(d.houseNum)setHouseNum(d.houseNum);if(d.camLink)setCamLink(d.camLink);if(d.jobType){setJobType(d.jobType);setScopeItems(d.scopeItems?.length>0?d.scopeItems.map((t,i)=>({id:i,text:t,on:true})):JOBS[d.jobType].scope.map((t,i)=>({id:i,text:t,on:true})));}if(d.paymentSplit)setSplit(d.paymentSplit);if(d.paymentStructure)setPaymentStructure(d.paymentStructure);if(d.customPayments)setCustomPayments(d.customPayments);if(d.preparedBy)setPreparedBy(d.preparedBy);if(d.pm)setPm(d.pm);if(d.docDate)setDocDate(d.docDate);if(d.totalPrice)setTotalPrice(String(d.totalPrice));if(d.priceDesc)setPriceDesc(d.priceDesc);if(d.optItems)setOptItems(d.optItems);if(d.additionalJobs)setAdditionalJobs(d.additionalJobs);if(d.contractNumber)setContractNumber(d.contractNumber);if(d.status)setStatus(d.status);if(d.measurements)setMeasurements(d.measurements);if(d.materials)setMaterials(d.materials);if(d.clientEmail)setClientEmail(d.clientEmail);}catch(e){}setHasDraft(false);localStorage.removeItem(DRAFT_KEY);};
+  const restoreDraft=()=>{try{const d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"{}");if(d.client)setClient(d.client);if(d.lastName)setLastName(d.lastName);if(d.houseNum)setHouseNum(d.houseNum);if(d.camLink)setCamLink(d.camLink);if(d.jobType){setJobType(d.jobType);setScopeItems(d.scopeItems?.length>0?d.scopeItems.map((t,i)=>({id:i,text:t,on:true})):JOBS[d.jobType].scope.map((t,i)=>({id:i,text:t,on:true})));}if(d.paymentSplit)setSplit(d.paymentSplit);if(d.paymentStructure)setPaymentStructure(d.paymentStructure);if(d.customPayments)setCustomPayments(d.customPayments);if(d.preparedBy)setPreparedBy(d.preparedBy);if(d.pm)setPm(d.pm);if(d.docDate)setDocDate(d.docDate);if(d.totalPrice)setTotalPrice(String(d.totalPrice));if(d.priceDesc)setPriceDesc(d.priceDesc);if(d.optItems)setOptItems(d.optItems);if(d.additionalJobs)setAdditionalJobs(d.additionalJobs);if(d.contractNumber)setContractNumber(d.contractNumber);if(d.status)setStatus(d.status);if(d.measurements)setMeasurements(d.measurements);if(d.materials)setMaterials(d.materials);if(d.clientEmail)setClientEmail(d.clientEmail);if(d.isInsuranceJob!==undefined)setIsInsuranceJob(d.isInsuranceJob);if(d.insFields)setInsFields(d.insFields);}catch(e){}setHasDraft(false);localStorage.removeItem(DRAFT_KEY);};
   const addMaterial=()=>{if(!newMaterialText.trim())return;saveMaterialLib(newMaterialText);setMaterialLibrary(loadMaterialLib());setMaterials(p=>[...p,{id:Date.now(),text:newMaterialText,on:true}]);setNewMaterialText("");};
   const toggleMaterial=id=>setMaterials(p=>p.map(m=>m.id===id?{...m,on:!m.on}:m));
   const editMaterial=(id,v)=>setMaterials(p=>p.map(m=>m.id===id?{...m,text:v}:m));
@@ -972,6 +1014,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     window.open(`mailto:${clientEmail}?subject=${subject}&body=${body}`);
     setShowEmailModal(false);
   };
+  const FROM_EMAILS = ["beshert@thebeshertgroup.com","cbrown7745@gmail.com"];
   const genBillingNum = () => {
     const yr=new Date().getFullYear();
     const key=`brrg_billing_inv_${yr}`;
@@ -1005,7 +1048,8 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     totalPrice:baseParsedTotal, priceDesc, optItems, paymentSplit,
     contractNumber, linkedContract:"", isRevised:isEditing&&isSaved,
     additionalJobs, paymentStructure, customPayments,
-    signature, status, measurements, materials
+    signature, status, measurements, materials,
+    isInsuranceJob, insFields
   };
 
   return (
@@ -1049,13 +1093,20 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                 <div><div style={{fontWeight:700,fontSize:18,color:PURPLE_DARK}}>📋 Estimates Dashboard</div><div style={{fontSize:12,color:"#888",marginTop:2}}>{dashboardData.length} estimate{dashboardData.length!==1?"s":""} saved</div></div>
                 <div style={{display:"flex",gap:10}}><button style={S.btn(HEADER_BG)} onClick={()=>{resetProposal();setAppMode("form");}}>+ New Estimate</button><button style={S.btn(PURPLE_DARK)} onClick={loadDashboard}>↻ Refresh</button></div>
               </div>
-              <div style={{display:"flex",gap:8,marginTop:16,flexWrap:"wrap"}}>{["All",...STATUS_OPTIONS].map(s=>(<button key={s} onClick={()=>setDashboardFilter(s)} style={{...S.btn(dashboardFilter===s?STATUS_COLORS[s]||HEADER_BG:WHITE,dashboardFilter===s?WHITE:PURPLE_DARK),border:`1.5px solid ${dashboardFilter===s?STATUS_COLORS[s]||HEADER_BG:"#d1c9e8"}`,fontSize:11,padding:"5px 14px"}}>{s}</button>))}</div>
+              <div style={{marginTop:16,marginBottom:4}}>
+                <input style={{...S.input,maxWidth:320}} placeholder="🔍 Search by name, contract #, address…" value={dashboardSearch} onChange={e=>setDashboardSearch(e.target.value)}/>
+              </div>
+              <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>{["All",...STATUS_OPTIONS].map(s=>(<button key={s} onClick={()=>setDashboardFilter(s)} style={{...S.btn(dashboardFilter===s?STATUS_COLORS[s]||HEADER_BG:WHITE,dashboardFilter===s?WHITE:PURPLE_DARK),border:`1.5px solid ${dashboardFilter===s?STATUS_COLORS[s]||HEADER_BG:"#d1c9e8"}`,fontSize:11,padding:"5px 14px"}}>{s}</button>))}</div>
             </div>
             {dashboardLoading
               ?<div style={{textAlign:"center",padding:40,color:"#888",fontSize:14}}>⏳ Loading estimates…</div>
               :dashboardData.length===0
                 ?<div style={{...S.card,textAlign:"center",padding:48}}><div style={{fontSize:32,marginBottom:12}}>📄</div><div style={{fontSize:15,fontWeight:700,color:PURPLE_DARK,marginBottom:6}}>No estimates yet</div><div style={{fontSize:13,color:"#888",marginBottom:20}}>Create your first estimate to see it here.</div><button style={S.btn(HEADER_BG)} onClick={()=>setAppMode("form")}>+ Create First Estimate</button></div>
-                :<div style={{...S.card,padding:0,overflow:"hidden"}}><div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12.5}}><thead><tr style={{background:NAVY}}>{["Contract #","Client","Date","Job","Total","Status"].map(h=>(<th key={h} style={{padding:"10px 14px",textAlign:"left",color:"rgba(255,255,255,0.7)",fontWeight:600,fontSize:11,textTransform:"uppercase",letterSpacing:0.5,whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead><tbody>{dashboardData.filter(e=>dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{handleLoadForEdit(e.contractNumber);setAppMode("form");}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{JOBS[e.jobType]?.icon||"📋"} {JOBS[e.jobType]?.label||"—"}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px"}} onClick={ev=>ev.stopPropagation()}>
+                :<div style={{...S.card,padding:0,overflow:"hidden"}}><div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12.5}}><thead><tr style={{background:NAVY}}>{["Contract #","Client","Date","Job","Total","Status"].map(h=>(<th key={h} style={{padding:"10px 14px",textAlign:"left",color:"rgba(255,255,255,0.7)",fontWeight:600,fontSize:11,textTransform:"uppercase",letterSpacing:0.5,whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead><tbody>{dashboardData.filter(e=>{
+                              const q=dashboardSearch.toLowerCase();
+                              if(q&&![e.contractNumber,e.client?.name,e.client?.address].join(" ").toLowerCase().includes(q))return false;
+                              return dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter;
+                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{handleLoadForEdit(e.contractNumber);setAppMode("form");}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{JOBS[e.jobType]?.icon||"📋"} {JOBS[e.jobType]?.label||"—"}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px"}} onClick={ev=>ev.stopPropagation()}>
                                   <select value={e.status||"Pending"} onChange={ev=>{ev.stopPropagation();handleUpdateStatus(e.contractNumber,ev.target.value);}} style={{background:STATUS_COLORS[e.status||"Pending"]||"#888",color:"#fff",border:"none",borderRadius:12,padding:"3px 9px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif"}}>
                                     {STATUS_OPTIONS.map(s=><option key={s} value={s} style={{background:"#fff",color:"#333"}}>{s}</option>)}
                                   </select>
@@ -1197,6 +1248,37 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                     <div><label style={S.label}>Decking Condition</label><select style={S.input} value={measurements.decking} onChange={e=>setMeasurements(p=>({...p,decking:e.target.value}))}>{["Good","Fair","Needs Replacement"].map(d=><option key={d}>{d}</option>)}</select></div>
                   </div>
                 </div>
+                {/* Insurance Job Toggle */}
+                <div style={S.card}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+                    <div>
+                      <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK}}>⚡ Insurance Claim Job</div>
+                      <div style={{fontSize:12,color:"#888",marginTop:2}}>Toggle on to add claim details to this estimate</div>
+                    </div>
+                    <button onClick={()=>setIsInsuranceJob(p=>!p)} style={{...S.btn(isInsuranceJob?"#C9A84C":WHITE,isInsuranceJob?NAVY:PURPLE_DARK),border:`2px solid ${isInsuranceJob?"#C9A84C":"#d1c9e8"}`,padding:"8px 20px",fontSize:13,fontWeight:700}}>
+                      {isInsuranceJob?"✓ Insurance Job":"Insurance Job"}
+                    </button>
+                  </div>
+                  {isInsuranceJob && (
+                    <div style={{marginTop:16,borderTop:`1px solid #e8d080`,paddingTop:16}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                        <div><label style={S.label}>Insurance Company</label><input style={S.input} placeholder="e.g. State Farm" value={insFields.insurer} onChange={e=>setInsFields(p=>({...p,insurer:e.target.value}))}/></div>
+                        <div><label style={S.label}>Claim Number</label><input style={S.input} placeholder="Claim #" value={insFields.claimNum} onChange={e=>setInsFields(p=>({...p,claimNum:e.target.value}))}/></div>
+                        <div><label style={S.label}>Policy Number</label><input style={S.input} placeholder="Policy #" value={insFields.policyNum} onChange={e=>setInsFields(p=>({...p,policyNum:e.target.value}))}/></div>
+                        <div><label style={S.label}>Adjuster Name</label><input style={S.input} placeholder="Adjuster name" value={insFields.adjuster} onChange={e=>setInsFields(p=>({...p,adjuster:e.target.value}))}/></div>
+                        <div><label style={S.label}>Date of Loss</label><input style={S.input} placeholder="MM/DD/YYYY" value={insFields.dateOfLoss} onChange={e=>setInsFields(p=>({...p,dateOfLoss:e.target.value}))}/></div>
+                        <div><label style={S.label}>Supplement # (if applicable)</label><input style={S.input} placeholder="e.g. 1" value={insFields.supplementNum} onChange={e=>setInsFields(p=>({...p,supplementNum:e.target.value}))}/></div>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12}}>
+                        <div><label style={S.label}>Deductible ($)</label><input style={S.input} placeholder="0.00" value={insFields.deductible} onChange={e=>setInsFields(p=>({...p,deductible:e.target.value}))}/></div>
+                        <div><label style={S.label}>ACV ($)</label><input style={S.input} placeholder="Approved amt" value={insFields.acv} onChange={e=>setInsFields(p=>({...p,acv:e.target.value}))}/></div>
+                        <div><label style={S.label}>RCV ($)</label><input style={S.input} placeholder="Full replacement" value={insFields.rcv} onChange={e=>setInsFields(p=>({...p,rcv:e.target.value}))}/></div>
+                        <div><label style={S.label}>Depreciation ($)</label><input style={S.input} placeholder="Holdback" value={insFields.depreciation} onChange={e=>setInsFields(p=>({...p,depreciation:e.target.value}))}/></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {validationErrors.length>0&&(<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"12px 16px",marginBottom:8}}>{validationErrors.map((e,i)=><div key={i} style={{fontSize:12,color:"#c0392b"}}>⚠ {e}</div>)}</div>)}
                 <div style={{textAlign:"right"}}><button style={S.btn(HEADER_BG)} onClick={()=>setStep(2)}>Next: Scope of Work →</button></div>
               </>
@@ -1754,7 +1836,16 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
         {showSigPad&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:500,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✍ Client Signature</div><div style={{fontSize:12,color:"#888",marginBottom:14}}>Sign below using mouse or finger. Appears on the printed document.</div><canvas ref={sigCanvasRef} width={440} height={150} style={{border:`2px solid ${PURPLE_LIGHT}`,borderRadius:8,cursor:"crosshair",background:"#fafafa",display:"block",width:"100%",touchAction:"none"}} onMouseDown={sigStart} onMouseMove={sigMove} onMouseUp={sigEnd} onMouseLeave={sigEnd} onTouchStart={sigStart} onTouchMove={sigMove} onTouchEnd={sigEnd}/><div style={{display:"flex",gap:10,marginTop:14,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={sigClear}>Clear</button><button style={S.btn("#888")} onClick={()=>setShowSigPad(false)}>Cancel</button><button style={S.btn(HEADER_BG)} onClick={sigCapture}>Save Signature</button></div></div></div>)}
 
         {/* EMAIL MODAL */}
-        {showEmailModal&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:480,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✉ Email {docType==="invoice"?"Invoice":"Estimate"} to Client</div><div style={{fontSize:12,color:"#888",marginBottom:16}}>A branded email with details will be sent to the address below.</div><div style={{marginBottom:14}}><label style={S.label}>Client Email Address</label><input style={S.input} type="email" placeholder="homeowner@email.com" value={clientEmail} onChange={e=>setClientEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSendEmail()}/></div><div style={{marginBottom:16,padding:"10px 14px",background:PURPLE_LIGHT,borderRadius:6,fontSize:12,color:PURPLE_DARK}}><strong>Subject:</strong> Your {docType==="invoice"?"Invoice":"Estimate"} from Beshert Roofing — {contractNumber||"(save first to generate #)"}</div><div style={{fontSize:12,color:"#888",marginBottom:12,padding:"8px 12px",background:"#f8f9fb",borderRadius:6}}>📱 This will open your email app with everything pre-filled. Just tap Send.</div><div style={{display:"flex",gap:10,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={()=>setShowEmailModal(false)}>Cancel</button><button style={S.btn("#2980b9")} onClick={handleMailto}>Open Email App →</button></div></div></div>)}
+        {showEmailModal&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:480,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✉ Email {docType==="invoice"?"Invoice":"Estimate"} to Client</div>
+              <div style={{marginBottom:14}}>
+                <label style={S.label}>Send From</label>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}>
+                  {["beshert@thebeshertgroup.com","cbrown7745@gmail.com"].map(em=>(
+                    <button key={em} onClick={()=>setSendFromEmail(em)} style={{...S.btn(sendFromEmail===em?HEADER_BG:WHITE,sendFromEmail===em?WHITE:PURPLE_DARK),border:`2px solid ${sendFromEmail===em?HEADER_BG:"#d1c9e8"}`,padding:"6px 14px",fontSize:11}}>{em}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{marginBottom:14}}><label style={S.label}>Client Email Address</label><input style={S.input} type="email" placeholder="homeowner@email.com" value={clientEmail} onChange={e=>setClientEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleMailto()}/></div><div style={{marginBottom:16,padding:"10px 14px",background:PURPLE_LIGHT,borderRadius:6,fontSize:12,color:PURPLE_DARK}}><strong>Subject:</strong> Your {docType==="invoice"?"Invoice":"Estimate"} from Beshert Roofing — {contractNumber||"(save first to generate #)"}</div><div style={{fontSize:12,color:"#888",marginBottom:12,padding:"8px 12px",background:"#f8f9fb",borderRadius:6}}>📱 This will open your email app with everything pre-filled. Just tap Send.</div><div style={{display:"flex",gap:10,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={()=>setShowEmailModal(false)}>Cancel</button><button style={S.btn("#2980b9")} onClick={handleMailto}>Open Email App →</button></div></div></div>)}
 
       </div>
     </div>
