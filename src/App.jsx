@@ -555,9 +555,9 @@ function BillingInvoicePreview({roofingLogo,preparedBy,pm,bInvNum,bInvDate,bInvD
         <div style={{fontSize:12,color:"#444",marginTop:2}}>DBA: MAGNANIMOUS LIFE, 501(C)3</div>
         <div style={{fontSize:11,color:"#666",marginTop:2}}>"A TRUSTED CHOICE SINCE 2005"</div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",padding:"16px 24px",borderBottom:"1px solid #e2e8f0"}}>
-        <div style={{fontSize:12,lineHeight:1.8,color:"#333"}}><div>Office: 216-326-7663</div><div>Mobile: 440-554-5332</div><div>Email: beshert@thebeshertgroup.com</div><div>Website: www.thebeshertgroup.com</div></div>
-        <div style={{textAlign:"right",fontSize:12,lineHeight:1.8,color:"#333"}}><div><strong>Prepared by:</strong> {preparedBy}</div><div><strong>Project Manager:</strong> {pm}</div></div>
+      <div style={{display:"flex",flexWrap:"wrap",padding:"16px 24px",borderBottom:"1px solid #e2e8f0",gap:16}}>
+        <div style={{flex:1,minWidth:200,fontSize:12,lineHeight:1.8,color:"#333"}}><div>Office: 216-326-7663</div><div>Mobile: 440-554-5332</div><div>Email: beshert@thebeshertgroup.com</div><div>Website: www.thebeshertgroup.com</div></div>
+        <div style={{fontSize:12,lineHeight:1.8,color:"#333"}}><div><strong>Prepared by:</strong> {preparedBy}</div><div><strong>Project Manager:</strong> {pm}</div></div>
       </div>
       <div style={{padding:"16px 24px",borderBottom:"1px solid #e2e8f0"}}>
         <div style={{display:"grid",gridTemplateColumns:"160px 1fr",gap:4}}>
@@ -639,6 +639,16 @@ export default function BeshertBuilder() {
 
   // ── NEW: Add-On Library ──
   const [addonLibrary, setAddonLibrary] = useState([]);
+
+  // ── Mobile detection ──
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
+  useEffect(()=>{
+    const h = ()=>setWindowWidth(window.innerWidth);
+    window.addEventListener("resize",h);
+    return ()=>window.removeEventListener("resize",h);
+  },[]);
+  const isMobile = windowWidth < 700;
+  const isTablet = windowWidth < 960;
 
   // ── V13 Insurance + Email FROM ──
   const [isInsuranceJob, setIsInsuranceJob] = useState(false);
@@ -1065,8 +1075,8 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>{loadDashboard();setAppMode("dashboard");}} style={{...S.btn(appMode==="dashboard"?GOLD:PURPLE_DARK,appMode==="dashboard"?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:11}}>📋 Dashboard</button>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            <button onClick={()=>{loadDashboard();setAppMode("dashboard");}} style={{...S.btn(appMode==="dashboard"?GOLD:PURPLE_DARK,appMode==="dashboard"?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:isMobile?10:11,padding:isMobile?"6px 10px":"8px 18px"}}>📋 {isMobile?"Dash":"Dashboard"}</button>
             {["proposal","invoice"].map(m=>(
               <button key={m} onClick={()=>setMode(m)} style={{...S.btn(mode===m?GOLD:PURPLE_DARK,mode===m?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:11}}>
                 {m==="proposal"?"📄 Proposal":"🧾 Invoice"}
@@ -1077,7 +1087,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
         </div>
       </div>
 
-      <div style={{maxWidth:920,margin:"0 auto",padding:"24px 16px"}}>
+      <div style={{maxWidth:920,margin:"0 auto",padding:isMobile?"12px 8px":"24px 16px"}}>
 
         {hasDraft&&appMode==="form"&&(
           <div style={{background:"#fff9ec",border:`2px solid ${GOLD}`,borderRadius:8,padding:"12px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
@@ -1106,7 +1116,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                               const q=dashboardSearch.toLowerCase();
                               if(q&&![e.contractNumber,e.client?.name,e.client?.address].join(" ").toLowerCase().includes(q))return false;
                               return dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter;
-                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{handleLoadForEdit(e.contractNumber);setAppMode("form");}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{JOBS[e.jobType]?.icon||"📋"} {JOBS[e.jobType]?.label||"—"}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px"}} onClick={ev=>ev.stopPropagation()}>
+                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{handleLoadForEdit(e.contractNumber);setMode("proposal");setAppMode("form");}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{JOBS[e.jobType]?.icon||"📋"} {JOBS[e.jobType]?.label||"—"}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px"}} onClick={ev=>ev.stopPropagation()}>
                                   <select value={e.status||"Pending"} onChange={ev=>{ev.stopPropagation();handleUpdateStatus(e.contractNumber,ev.target.value);}} style={{background:STATUS_COLORS[e.status||"Pending"]||"#888",color:"#fff",border:"none",borderRadius:12,padding:"3px 9px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif"}}>
                                     {STATUS_OPTIONS.map(s=><option key={s} value={s} style={{background:"#fff",color:"#333"}}>{s}</option>)}
                                   </select>
@@ -1222,7 +1232,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                     )}
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                    {[["name","Full Name"],["title","Title / Salutation"],["company","Organization / Company"],["address","Property Address"],["city","City"],["state","State"],["zip","ZIP"],["phone","Phone"],["email","Email"]].map(([k,lbl])=>(
+                    {(isMobile?[["name","Full Name"],["address","Property Address"],["city","City"],["state","State"],["zip","ZIP"],["phone","Phone"],["email","Email"],["title","Title"],["company","Company"]]:[["name","Full Name"],["title","Title / Salutation"],["company","Organization / Company"],["address","Property Address"],["city","City"],["state","State"],["zip","ZIP"],["phone","Phone"],["email","Email"]]).map(([k,lbl])=>(
                       <div key={k} style={k==="company"||k==="address"?{gridColumn:"1/-1"}:{}}>
                         <label style={S.label}>{lbl}</label>
                         <input style={S.input} placeholder={k==="title"?"e.g. Mr., Mrs., Dr.":""} value={client[k]} onChange={e=>setClient(p=>({...p,[k]:e.target.value}))}/>
@@ -1241,7 +1251,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                 </div>
                 <div style={S.card}>
                   <div style={{fontWeight:700,fontSize:14,marginBottom:14,color:PURPLE_DARK}}>📐 Roof Measurements <span style={{fontWeight:400,fontSize:12,color:"#888"}}>(reference only — stored with estimate)</span></div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14}}>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 1fr 1fr 1fr",gap:14}}>
                     <div><label style={S.label}>Squares</label><input style={S.input} type="number" placeholder="e.g. 22" value={measurements.squares} onChange={e=>setMeasurements(p=>({...p,squares:e.target.value}))}/></div>
                     <div><label style={S.label}>Pitch</label><select style={S.input} value={measurements.pitch} onChange={e=>setMeasurements(p=>({...p,pitch:e.target.value}))}>{["2/12","3/12","4/12","5/12","6/12","7/12","8/12","9/12","10/12","11/12","12/12","14/12+"].map(p=><option key={p}>{p}</option>)}</select></div>
                     <div><label style={S.label}>Layers</label><select style={S.input} value={measurements.layers} onChange={e=>setMeasurements(p=>({...p,layers:e.target.value}))}><option value="1">1 Layer</option><option value="2">2 Layers</option></select></div>
@@ -1261,7 +1271,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                   </div>
                   {isInsuranceJob && (
                     <div style={{marginTop:16,borderTop:`1px solid #e8d080`,paddingTop:16}}>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12,marginBottom:12}}>
                         <div><label style={S.label}>Insurance Company</label><input style={S.input} placeholder="e.g. State Farm" value={insFields.insurer} onChange={e=>setInsFields(p=>({...p,insurer:e.target.value}))}/></div>
                         <div><label style={S.label}>Claim Number</label><input style={S.input} placeholder="Claim #" value={insFields.claimNum} onChange={e=>setInsFields(p=>({...p,claimNum:e.target.value}))}/></div>
                         <div><label style={S.label}>Policy Number</label><input style={S.input} placeholder="Policy #" value={insFields.policyNum} onChange={e=>setInsFields(p=>({...p,policyNum:e.target.value}))}/></div>
@@ -1269,7 +1279,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                         <div><label style={S.label}>Date of Loss</label><input style={S.input} placeholder="MM/DD/YYYY" value={insFields.dateOfLoss} onChange={e=>setInsFields(p=>({...p,dateOfLoss:e.target.value}))}/></div>
                         <div><label style={S.label}>Supplement # (if applicable)</label><input style={S.input} placeholder="e.g. 1" value={insFields.supplementNum} onChange={e=>setInsFields(p=>({...p,supplementNum:e.target.value}))}/></div>
                       </div>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12}}>
+                      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 1fr 1fr 1fr",gap:12}}>
                         <div><label style={S.label}>Deductible ($)</label><input style={S.input} placeholder="0.00" value={insFields.deductible} onChange={e=>setInsFields(p=>({...p,deductible:e.target.value}))}/></div>
                         <div><label style={S.label}>ACV ($)</label><input style={S.input} placeholder="Approved amt" value={insFields.acv} onChange={e=>setInsFields(p=>({...p,acv:e.target.value}))}/></div>
                         <div><label style={S.label}>RCV ($)</label><input style={S.input} placeholder="Full replacement" value={insFields.rcv} onChange={e=>setInsFields(p=>({...p,rcv:e.target.value}))}/></div>
@@ -1662,12 +1672,12 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                       {bInvContract&&<button style={S.btn("#888")} onClick={()=>{setBInvContract("");setBInvClient({name:"",address:"",city:""});setBInvLines([{id:1,desc:"",amt:""}]);}}>Clear</button>}
                     </div>
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:16}}>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:14,marginBottom:16}}>
                     <div><label style={S.label}>Invoice Number</label><div style={{display:"flex",gap:8}}><input style={{...S.input,flex:1}} value={bInvNum} onChange={e=>setBInvNum(e.target.value)} placeholder="Auto-generate"/><button style={{...S.btn(HEADER_BG),padding:"8px 10px",fontSize:11}} onClick={()=>setBInvNum(genBillingNum())}>Gen</button></div></div>
                     <div><label style={S.label}>Invoice Date</label><input style={S.input} value={bInvDate} onChange={e=>setBInvDate(e.target.value)}/></div>
                     <div><label style={S.label}>Due Date</label><input style={S.input} placeholder="e.g. Due upon receipt" value={bInvDueDate} onChange={e=>setBInvDueDate(e.target.value)}/></div>
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:16}}>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:14,marginBottom:16}}>
                     <div><label style={S.label}>Client Name</label><input style={S.input} value={bInvClient.name} onChange={e=>setBInvClient(p=>({...p,name:e.target.value}))}/></div>
                     <div><label style={S.label}>Property Address</label><input style={S.input} value={bInvClient.address} onChange={e=>setBInvClient(p=>({...p,address:e.target.value}))}/></div>
                     <div><label style={S.label}>City, State, ZIP</label><input style={S.input} value={bInvClient.city} onChange={e=>setBInvClient(p=>({...p,city:e.target.value}))}/></div>
@@ -1694,7 +1704,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                   {bInvLines.some(l=>l.amt)&&(<div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}><div style={{background:NAVY,color:WHITE,padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:700}}>Total Due: {(()=>{const t=bInvLines.reduce((s,l)=>s+(parseFloat(String(l.amt).replace(/[^0-9.]/g,""))||0),0);return "$"+t.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});})()}</div></div>)}
                 </div>
                 <div style={S.card}>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14,marginBottom:16}}>
                     <div><label style={S.label}>Payment Terms</label><input style={S.input} value={bInvTerms} onChange={e=>setBInvTerms(e.target.value)}/></div>
                     <div><label style={S.label}>Accepted Payment Methods</label><input style={S.input} value={bInvMethods} onChange={e=>setBInvMethods(e.target.value)}/></div>
                   </div>
@@ -1729,7 +1739,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                     </div>
                     <span style={S.tag(GOLD)}>INVOICE</span>
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:14}}>
+                  <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:14,marginBottom:14}}>
                     <div><label style={S.label}>Invoice #</label><input style={S.input} value={invNum} onChange={e=>setInvNum(e.target.value)}/></div>
                     <div><label style={S.label}>Invoice Date</label><input style={S.input} value={docDate} onChange={e=>setDocDate(e.target.value)}/></div>
                     <div><label style={S.label}>Due Date</label><input style={S.input} value={invDue} onChange={e=>setInvDue(e.target.value)}/></div>
