@@ -1211,26 +1211,32 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
   return (
     <div style={S.app}>
       {/* Top Bar */}
-      <div style={{background:`linear-gradient(135deg,${NAVY} 0%,${PURPLE_DARK} 100%)`,color:WHITE,padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <img src={ROOFING_LOGO} alt="Beshert" style={{height:48,objectFit:"contain",background:WHITE,borderRadius:4,padding:3}}/>
-          <div>
-            <div style={{fontWeight:700,fontSize:15,letterSpacing:1}}>BESHERT ROOFING REDEVELOPMENT GROUP</div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.6)",letterSpacing:2}}>PROPOSAL & INVOICE BUILDER</div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginTop:2}}>📞 {COMPANY.office} · 📱 {COMPANY.mobile} · {COMPANY.email}</div>
+      <div style={{background:`linear-gradient(135deg,${NAVY} 0%,${PURPLE_DARK} 100%)`,color:WHITE,padding:isMobile?"10px 12px":"12px 24px",display:"flex",flexDirection:isMobile?"column":"row",alignItems:isMobile?"stretch":"center",justifyContent:"space-between",gap:isMobile?8:16}}>
+        {/* Row 1: Logo + Name + Help + Church logo (desktop) */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:isMobile?10:14}}>
+            <img src={ROOFING_LOGO} alt="Beshert" style={{height:isMobile?36:48,objectFit:"contain",background:WHITE,borderRadius:4,padding:2,flexShrink:0}}/>
+            <div>
+              <div style={{fontWeight:700,fontSize:isMobile?13:15,letterSpacing:isMobile?0:1,lineHeight:1.2}}>
+                {isMobile?"Beshert Roofing":"BESHERT ROOFING REDEVELOPMENT GROUP"}
+              </div>
+              {!isMobile&&<div style={{fontSize:11,color:"rgba(255,255,255,0.6)",letterSpacing:2}}>PROPOSAL & INVOICE BUILDER</div>}
+              {!isMobile&&<div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginTop:2}}>📞 {COMPANY.office} · 📱 {COMPANY.mobile} · {COMPANY.email}</div>}
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            {!isMobile&&<img src={CHURCH_LOGO} alt="Magnanimous Life" style={{height:48,objectFit:"contain",background:WHITE,borderRadius:4,padding:3}}/>}
+            <button onClick={()=>setShowHelp(true)} style={{background:"rgba(255,255,255,0.15)",border:"1.5px solid rgba(255,255,255,0.3)",borderRadius:"50%",width:isMobile?28:32,height:isMobile?28:32,color:"#fff",fontSize:isMobile?13:15,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,lineHeight:1}} title="Help & FAQ">?</button>
           </div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            <button onClick={()=>{loadDashboard();setAppMode("dashboard");}} style={{...S.btn(appMode==="dashboard"?GOLD:PURPLE_DARK,appMode==="dashboard"?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:isMobile?10:11,padding:isMobile?"6px 10px":"8px 18px"}}>📋 {isMobile?"Dash":"Dashboard"}</button>
-            {["proposal","invoice"].map(m=>(
-              <button key={m} onClick={()=>{setMode(m);setAppMode("form");if(m==="proposal")setProposalMode("quick");if(m==="invoice"&&dashboardData.length===0)loadDashboard();}} style={{...S.btn(mode===m?GOLD:PURPLE_DARK,mode===m?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:11}}>
-                {m==="proposal"?"📄 Proposal":"🧾 Invoice"}
-              </button>
-            ))}
-          </div>
-          <img src={CHURCH_LOGO} alt="Magnanimous Life" style={{height:48,objectFit:"contain",background:WHITE,borderRadius:4,padding:3}}/>
-            <button onClick={()=>setShowHelp(true)} style={{background:"rgba(255,255,255,0.15)",border:"1.5px solid rgba(255,255,255,0.3)",borderRadius:"50%",width:32,height:32,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,lineHeight:1}} title="Help & FAQ">?</button>
+        {/* Row 2: Nav buttons */}
+        <div style={{display:"flex",gap:6,flexWrap:isMobile?"nowrap":"wrap",justifyContent:isMobile?"space-between":"flex-start"}}>
+          <button onClick={()=>{loadDashboard();setAppMode("dashboard");}} style={{...S.btn(appMode==="dashboard"?GOLD:PURPLE_DARK,appMode==="dashboard"?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:10,padding:"7px 10px",flex:isMobile?1:0}}>📋 {isMobile?"Dash":"Dashboard"}</button>
+          {["proposal","invoice"].map(m=>(
+            <button key={m} onClick={()=>{setMode(m);setAppMode("form");if(m==="proposal")setProposalMode("quick");if(m==="invoice"&&dashboardData.length===0)loadDashboard();}} style={{...S.btn(mode===m?GOLD:PURPLE_DARK,mode===m?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:10,padding:"7px 10px",flex:isMobile?1:0}}>
+              {m==="proposal"?"📄 Proposal":"🧾 Invoice"}
+            </button>
+          ))}
         </div>
       </div>
 
