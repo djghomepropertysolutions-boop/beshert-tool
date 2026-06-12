@@ -543,6 +543,23 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
 }
 
 // ═════════════════════ MAIN COMPONENT ════════════════════════════════════════
+function HelpTopic({topic, isLast}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{borderBottom:isLast?"none":"1px solid #ece9f4",marginBottom:isLast?0:4}}>
+      <button onClick={()=>setOpen(p=>!p)} style={{width:"100%",background:"none",border:"none",padding:"12px 4px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",textAlign:"left"}}>
+        <span style={{fontSize:20,flexShrink:0}}>{topic.icon}</span>
+        <span style={{fontWeight:700,fontSize:14,color:"#1a2744",flex:1,fontFamily:"Georgia,serif"}}>{topic.title}</span>
+        <span style={{fontSize:16,color:"#888",flexShrink:0}}>{open?"▲":"▼"}</span>
+      </button>
+      {open && (
+        <div style={{padding:"0 4px 14px 36px",fontSize:13,color:"#444",lineHeight:1.7,fontFamily:"Georgia,serif"}}
+          dangerouslySetInnerHTML={{__html:topic.content.replace(/\n/g,"<br/>")}}/>
+      )}
+    </div>
+  );
+}
+
 function BillingInvoicePreview({roofingLogo,preparedBy,pm,bInvNum,bInvDate,bInvDueDate,bInvClient,bInvLines,bInvTerms,bInvMethods,bInvStatus}) {
   const subtotal = bInvLines.reduce((sum,l)=>sum+(parseFloat(String(l.amt).replace(/[^0-9.]/g,""))||0),0);
   const fmtA = n => "$"+((parseFloat(String(n).replace(/[^0-9.]/g,""))||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}));
@@ -650,12 +667,16 @@ function BeshertBuilder() {
   const isMobile = windowWidth < 700;
   const isTablet = windowWidth < 960;
 
+  // ── V14 Quick Estimate mode ──
+  const [proposalMode, setProposalMode] = useState("quick"); // "quick" | "full"
+
   // ── V14 Notes, Toasts, Sync ──
   const [notes,        setNotes]       = useState("");
   const [toasts,       setToasts]      = useState([]);
   const [unsyncedIds,  setUnsyncedIds] = useState(()=>{try{return JSON.parse(localStorage.getItem("brrg_unsynced")||"[]");}catch(e){return[];}});
   const [isSyncing,    setIsSyncing]   = useState(false);
   const [showAnalytics,setShowAnalytics]=useState(false);
+  const [showHelp,     setShowHelp]     =useState(false);
 
   const addToast = (msg, type="info") => {
     const id = Date.now()+Math.random();
@@ -968,7 +989,7 @@ function BeshertBuilder() {
     setStatus("Pending"); setMeasurements({squares:"",pitch:"4/12",layers:"1",decking:"Good"});
     setMaterials([]); setNewMaterialText(""); setSignature(null); setClientEmail("");
     setValidationErrors([]);
-    setNotes(""); setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
+    setNotes(""); setProposalMode("quick"); setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     localStorage.removeItem(DRAFT_KEY);
   };
 
@@ -1132,6 +1153,24 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     addToast("📋 Estimate duplicated — fill in client details and save","info");
   };
 
+  const handleQuickSaveAndPreview = async () => {
+    const e = [];
+    if(!client.name.trim()) e.push("Client name is required");
+    if(!client.address.trim()) e.push("Property address is required");
+    if(baseParsedTotal <= 0) e.push("Total price is required");
+    if(e.length > 0){ setValidationErrors(e); addToast("Please fill required fields","error"); return; }
+    setValidationErrors([]);
+    // Auto-fill scope from job type defaults
+    if(scopeItems.filter(s=>s.on).length === 0){
+      setScopeItems(JOBS[jobType].scope.map((t,i)=>({id:i,text:t,on:true})));
+    }
+    // Auto-include all default legal pages
+    setFinalPages(p=>p.map(fp=>({...fp,on:true})));
+    await handleSaveEstimate();
+    setShowPreview(true);
+    setStep(5);
+  };
+
   const genBillingNum = () => {
     const yr=new Date().getFullYear();
     const key=`brrg_billing_inv_${yr}`;
@@ -1185,12 +1224,13 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             <button onClick={()=>{loadDashboard();setAppMode("dashboard");}} style={{...S.btn(appMode==="dashboard"?GOLD:PURPLE_DARK,appMode==="dashboard"?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:isMobile?10:11,padding:isMobile?"6px 10px":"8px 18px"}}>📋 {isMobile?"Dash":"Dashboard"}</button>
             {["proposal","invoice"].map(m=>(
-              <button key={m} onClick={()=>{setMode(m);if(m==="invoice"&&dashboardData.length===0)loadDashboard();}} style={{...S.btn(mode===m?GOLD:PURPLE_DARK,mode===m?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:11}}>
+              <button key={m} onClick={()=>{setMode(m);setAppMode("form");if(m==="proposal")setProposalMode("quick");if(m==="invoice"&&dashboardData.length===0)loadDashboard();}} style={{...S.btn(mode===m?GOLD:PURPLE_DARK,mode===m?NAVY:WHITE),textTransform:"uppercase",letterSpacing:1,fontSize:11}}>
                 {m==="proposal"?"📄 Proposal":"🧾 Invoice"}
               </button>
             ))}
           </div>
           <img src={CHURCH_LOGO} alt="Magnanimous Life" style={{height:48,objectFit:"contain",background:WHITE,borderRadius:4,padding:3}}/>
+            <button onClick={()=>setShowHelp(true)} style={{background:"rgba(255,255,255,0.15)",border:"1.5px solid rgba(255,255,255,0.3)",borderRadius:"50%",width:32,height:32,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,lineHeight:1}} title="Help & FAQ">?</button>
         </div>
       </div>
 
@@ -1257,13 +1297,13 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                               const q=dashboardSearch.toLowerCase();
                               if(q&&![e.contractNumber,e.client?.name,e.client?.address].join(" ").toLowerCase().includes(q))return false;
                               return dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter;
-                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{if(e.docType==="billing_invoice"){handleLoadBillingInvoice(e);}else{handleLoadForEdit(e.contractNumber);setMode("proposal");setAppMode("form");}}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>
+                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{if(e.docType==="billing_invoice"){handleLoadBillingInvoice(e);}else{handleLoadForEdit(e.contractNumber);setMode("proposal");setProposalMode("full");setAppMode("form");}}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>
                                   {e.contractNumber}
                                   {unsyncedIds.includes(e.contractNumber)
                                     ? <span title="Local only" style={{marginLeft:6,fontSize:10}}>📱</span>
                                     : <span title="Synced" style={{marginLeft:6,fontSize:10}}>☁</span>}
                                 </td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{e.docType==="billing_invoice"?"🧾 Billing Invoice":(JOBS[e.jobType]?.icon||"📋")+" "+(JOBS[e.jobType]?.label||"—")}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px",whiteSpace:"nowrap"}} onClick={ev=>ev.stopPropagation()}>
-                                  {e.docType!=="billing_invoice"&&<button onClick={ev=>{ev.stopPropagation();handleDuplicateEstimate(e.contractNumber);}} style={{...S.btn(PURPLE_LIGHT,PURPLE_DARK),border:`1px solid #d1c9e8`,fontSize:10,padding:"3px 8px",marginRight:6}}>📋 Copy</button>}
+                                  {e.docType!=="billing_invoice"&&<button onClick={ev=>{ev.stopPropagation();handleDuplicateEstimate(e.contractNumber);}} style={{...S.btn(PURPLE_LIGHT,PURPLE_DARK),border:`1px solid #d1c9e8`,fontSize:10,padding:"3px 8px",marginRight:6}}>Duplicate</button>}
                                   <select value={e.status||"Pending"} onChange={ev=>{ev.stopPropagation();handleUpdateStatus(e.contractNumber,ev.target.value);}} style={{background:STATUS_COLORS[e.status||"Pending"]||"#888",color:"#fff",border:"none",borderRadius:12,padding:"3px 9px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif"}}>
                                     {STATUS_OPTIONS.map(s=><option key={s} value={s} style={{background:"#fff",color:"#333"}}>{s}</option>)}
                                   </select>
@@ -1277,7 +1317,16 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           <>
             {!showPreview && (
               <div style={{...S.card,padding:"14px 20px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
+                {/* Mode Toggle */}
+                <div style={{display:"flex",gap:8,marginBottom:proposalMode==="full"?14:0,flexWrap:"wrap",alignItems:"center"}}>
+                  <button onClick={()=>setProposalMode("quick")} style={{...S.btn(proposalMode==="quick"?"#27ae60":WHITE,proposalMode==="quick"?WHITE:PURPLE_DARK),border:`2px solid ${proposalMode==="quick"?"#27ae60":"#d1c9e8"}`,fontSize:12,padding:"6px 16px"}}>🚀 Quick Estimate</button>
+                  <button onClick={()=>setProposalMode("full")} style={{...S.btn(proposalMode==="full"?HEADER_BG:WHITE,proposalMode==="full"?WHITE:PURPLE_DARK),border:`2px solid ${proposalMode==="full"?HEADER_BG:"#d1c9e8"}`,fontSize:12,padding:"6px 16px"}}>📋 Full Estimate</button>
+                  <div style={{marginLeft:"auto",display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {isEditing && <span style={{...S.tag(GOLD),fontSize:11,padding:"4px 10px"}}>✏️ Editing: {contractNumber}</span>}
+                    <button onClick={resetProposal} style={S.btn("#888")}>{isEditing?"Cancel Edit":"New"}</button>
+                  </div>
+                </div>
+                {proposalMode==="full" && <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
                   {[["1","Project Setup"],["2","Scope of Work"],["3","Legal Pages"],["4","Pricing"],["5","Save & Preview"]].map(([n,lbl])=>(
                     <button key={n} style={S.stepBtn(step===Number(n))} onClick={()=>{setShowPreview(false);setStep(Number(n));}}>{n}. {lbl}</button>
                   ))}
@@ -1289,12 +1338,65 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                     </button>
                     <button onClick={resetProposal} style={S.btn("#888")}>{isEditing?"Cancel Edit":"New Estimate"}</button>
                   </div>
+                </div>}
+              </div>
+            )}
+
+            {/* ══ QUICK ESTIMATE FORM ══ */}
+            {!showPreview && proposalMode==="quick" && (
+              <div style={S.card}>
+                <div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>🚀 Quick Estimate</div>
+                <div style={{fontSize:12,color:"#888",marginBottom:20}}>Fill in the essentials — save and preview in seconds. Add full scope, legal pages, and details anytime using Full Estimate view.</div>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14,marginBottom:14}}>
+                  <div><label style={S.label}>Client Name *</label><input style={S.input} placeholder="Full name" value={client.name} onChange={e=>setClient(p=>({...p,name:e.target.value}))}/></div>
+                  <div><label style={S.label}>Property Address *</label><input style={S.input} placeholder="Street address" value={client.address} onChange={e=>setClient(p=>({...p,address:e.target.value}))}/></div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:14,marginBottom:14}}>
+                  <div><label style={S.label}>City</label><input style={S.input} placeholder="Cleveland" value={client.city} onChange={e=>setClient(p=>({...p,city:e.target.value}))}/></div>
+                  <div><label style={S.label}>Phone</label><input style={S.input} placeholder="(216) 000-0000" value={client.phone||""} onChange={e=>setClient(p=>({...p,phone:e.target.value}))}/></div>
+                  <div><label style={S.label}>Date</label><input style={S.input} value={docDate} onChange={e=>setDocDate(e.target.value)}/></div>
+                </div>
+                <div style={{marginBottom:14}}>
+                  <label style={S.label}>Job Type *</label>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}>
+                    {Object.entries(JOBS).map(([key,job])=>(
+                      <button key={key} onClick={()=>{setJobType(key);setScopeItems(job.scope.map((t,i)=>({id:i,text:t,on:true})));}} style={{...S.btn(jobType===key?job.color||HEADER_BG:WHITE,jobType===key?WHITE:PURPLE_DARK),border:`2px solid ${jobType===key?job.color||HEADER_BG:"#d1c9e8"}`,padding:"8px 14px",fontSize:12}}>
+                        {job.icon} {job.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14,marginBottom:14}}>
+                  <div>
+                    <label style={S.label}>Total Price *</label>
+                    <div style={{display:"flex",alignItems:"center"}}>
+                      <span style={{background:PURPLE_LIGHT,border:"1.5px solid #d1c9e8",borderRight:"none",borderRadius:"6px 0 0 6px",padding:"9px 12px",fontSize:13,fontWeight:700,color:PURPLE_DARK}}>$</span>
+                      <input style={{...S.input,borderRadius:"0 6px 6px 0"}} placeholder="0.00" value={totalPrice} onChange={e=>setTotalPrice(e.target.value)}/>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={S.label}>Payment Split</label>
+                    <div style={{display:"flex",gap:8,marginTop:6}}>
+                      {["50/50","33/33/34"].map(s=>(<button key={s} onClick={()=>setSplit(s)} style={{...S.btn(paymentSplit===s?HEADER_BG:WHITE,paymentSplit===s?WHITE:PURPLE_DARK),border:`2px solid ${paymentSplit===s?HEADER_BG:"#d1c9e8"}`,fontSize:12,padding:"8px 14px"}}>{s}</button>))}
+                    </div>
+                  </div>
+                </div>
+                <div style={{marginBottom:14}}><label style={S.label}>Internal Notes <span style={{fontWeight:400,color:"#888"}}>(not printed)</span></label><input style={S.input} placeholder="e.g. call after 3pm · gate code 1234" value={notes} onChange={e=>setNotes(e.target.value)}/></div>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,padding:"10px 14px",background:"#fafafa",borderRadius:8,border:`1px solid #e2e8f0`}}>
+                  <span style={{fontSize:12,color:"#666"}}>⚡ Insurance claim?</span>
+                  <button onClick={()=>setIsInsuranceJob(p=>!p)} style={{...S.btn(isInsuranceJob?"#C9A84C":WHITE,isInsuranceJob?NAVY:PURPLE_DARK),border:`2px solid ${isInsuranceJob?"#C9A84C":"#d1c9e8"}`,padding:"5px 14px",fontSize:11}}>{isInsuranceJob?"✓ Yes":"No"}</button>
+                  {isInsuranceJob&&<span style={{fontSize:11,color:"#888"}}>Add claim details in Full Estimate → Step 1</span>}
+                </div>
+                {validationErrors.length>0&&(<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"12px 16px",marginBottom:14}}>{validationErrors.map((e,i)=><div key={i} style={{fontSize:12,color:"#c0392b"}}>⚠ {e}</div>)}</div>)}
+                <div style={{display:"flex",gap:10,justifyContent:"space-between",flexWrap:"wrap"}}>
+                  <button style={S.btn(PURPLE_DARK)} onClick={()=>setProposalMode("full")}>📋 Switch to Full Estimate →</button>
+                  <button style={{...S.btn(saveStatus==="saving"?"#888":"#27ae60"),minWidth:180}} onClick={handleQuickSaveAndPreview} disabled={saveStatus==="saving"}>{saveStatus==="saving"?"⏳ Saving…":"🚀 Save & Preview →"}</button>
                 </div>
               </div>
             )}
 
-            {/* STEP 1 */}
-            {!showPreview && step===1 && (
+            {/* STEPS (Full Estimate mode only) */}
+            {proposalMode==="full" && !showPreview && step===1 && (
               <>
                 <div style={S.card}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1432,18 +1534,17 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                         <div><label style={S.label}>RCV ($)</label><input style={S.input} placeholder="Full replacement" value={insFields.rcv} onChange={e=>setInsFields(p=>({...p,rcv:e.target.value}))}/></div>
                         <div><label style={S.label}>Depreciation ($)</label><input style={S.input} placeholder="Holdback" value={insFields.depreciation} onChange={e=>setInsFields(p=>({...p,depreciation:e.target.value}))}/></div>
                       </div>
-                    </div>
-                    {/* Auto-calc */}
-                    {(insFields.acv||insFields.rcv||insFields.deductible) && (
-                      <div style={{marginTop:14,padding:"10px 14px",background:"#fffbe8",border:"1px solid #f0d080",borderRadius:6}}>
-                        <div style={{fontSize:11,fontWeight:700,color:"#7a5800",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Auto-Calculated</div>
-                        <div style={{display:"flex",gap:20,flexWrap:"wrap",fontSize:12}}>
-                          {insFields.acv&&insFields.deductible&&<div><span style={{color:"#888"}}>Expected insurance check: </span><strong>{fmtAmt(Math.max(0,parseFloat(insFields.acv||0)-parseFloat(insFields.deductible||0)))}</strong></div>}
-                          {insFields.rcv&&insFields.acv&&<div><span style={{color:"#888"}}>Supplement target: </span><strong>{fmtAmt(Math.max(0,parseFloat(insFields.rcv||0)-parseFloat(insFields.acv||0)))}</strong></div>}
-                          {insFields.deductible&&<div><span style={{color:"#888"}}>Client out-of-pocket: </span><strong>{fmtAmt(parseFloat(insFields.deductible||0))}</strong></div>}
+                      {(insFields.acv||insFields.rcv||insFields.deductible) && (
+                        <div style={{marginTop:14,padding:"10px 14px",background:"#fffbe8",border:"1px solid #f0d080",borderRadius:6}}>
+                          <div style={{fontSize:11,fontWeight:700,color:"#7a5800",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Auto-Calculated</div>
+                          <div style={{display:"flex",gap:20,flexWrap:"wrap",fontSize:12}}>
+                            {insFields.acv&&insFields.deductible&&<div><span style={{color:"#888"}}>Expected insurance check: </span><strong>{fmtAmt(Math.max(0,parseFloat(insFields.acv||0)-parseFloat(insFields.deductible||0)))}</strong></div>}
+                            {insFields.rcv&&insFields.acv&&<div><span style={{color:"#888"}}>Supplement target: </span><strong>{fmtAmt(Math.max(0,parseFloat(insFields.rcv||0)-parseFloat(insFields.acv||0)))}</strong></div>}
+                            {insFields.deductible&&<div><span style={{color:"#888"}}>Client out-of-pocket: </span><strong>{fmtAmt(parseFloat(insFields.deductible||0))}</strong></div>}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -1454,12 +1555,11 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                 </div>
 
                 {validationErrors.length>0&&(<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"12px 16px",marginBottom:8}}>{validationErrors.map((e,i)=><div key={i} style={{fontSize:12,color:"#c0392b"}}>⚠ {e}</div>)}</div>)}
-                <div style={{textAlign:"right"}}><button style={S.btn(HEADER_BG)} onClick={()=>setStep(2)}>Next: Scope of Work →</button></div>
+                <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10}}><button style={S.btn("#888")} onClick={()=>setProposalMode("quick")}>← Back to Quick</button><button style={S.btn(HEADER_BG)} onClick={()=>setStep(2)}>Next: Scope of Work →</button></div>
               </>
             )}
 
-            {/* STEP 2 */}
-            {!showPreview && step===2 && (
+            {proposalMode==="full" && !showPreview && step===2 && (
               <>
                 <div style={S.card}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
@@ -1493,8 +1593,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
               </>
             )}
 
-            {/* STEP 3 */}
-            {!showPreview && step===3 && (
+            {proposalMode==="full" && !showPreview && step===3 && (
               <>
                 <div style={S.card}>
                   <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK,marginBottom:14}}>Legal Pages</div>
@@ -1514,7 +1613,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
             )}
 
             {/* STEP 4 — Pricing (HEAVILY MODIFIED) */}
-            {!showPreview && step===4 && (
+            {proposalMode==="full" && !showPreview && step===4 && (
               <>
                 <div style={S.card}>
                   <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK,marginBottom:20}}>Pricing</div>
@@ -2020,6 +2119,26 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           ))}
         </div>
 
+        {/* HELP MODAL */}
+        {showHelp && (
+          <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16,overflowY:"auto"}}>
+            <div style={{background:"#fff",borderRadius:12,maxWidth:640,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)",marginTop:20,marginBottom:20}}>
+              <div style={{background:NAVY,borderRadius:"12px 12px 0 0",padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontWeight:700,fontSize:17,color:GOLD}}>Help & FAQ</div>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginTop:2}}>Beshert Roofing Estimate Tool</div>
+                </div>
+                <button onClick={()=>setShowHelp(false)} style={{background:"rgba(255,255,255,0.15)",border:"none",color:"#fff",fontSize:20,cursor:"pointer",borderRadius:6,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+              </div>
+              <div style={{padding:20}}>
+                {HELP_TOPICS.map((topic,i)=>(
+                  <HelpTopic key={topic.id} topic={topic} isLast={i===HELP_TOPICS.length-1}/>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* SIGNATURE PAD MODAL */}
         {showSigPad&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:500,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✍ Client Signature</div><div style={{fontSize:12,color:"#888",marginBottom:14}}>Sign below using mouse or finger. Appears on the printed document.</div><canvas ref={sigCanvasRef} width={440} height={150} style={{border:`2px solid ${PURPLE_LIGHT}`,borderRadius:8,cursor:"crosshair",background:"#fafafa",display:"block",width:"100%",touchAction:"none"}} onMouseDown={sigStart} onMouseMove={sigMove} onMouseUp={sigEnd} onMouseLeave={sigEnd} onTouchStart={sigStart} onTouchMove={sigMove} onTouchEnd={sigEnd}/><div style={{display:"flex",gap:10,marginTop:14,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={sigClear}>Clear</button><button style={S.btn("#888")} onClick={()=>setShowSigPad(false)}>Cancel</button><button style={S.btn(HEADER_BG)} onClick={sigCapture}>Save Signature</button></div></div></div>)}
 
@@ -2039,6 +2158,98 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     </div>
   );
 }
+
+// ══════════════════════════════════════════════════════
+// HELP MODAL CONTENT
+// ══════════════════════════════════════════════════════
+const HELP_TOPICS = [
+  {
+    id:"quick-vs-full",
+    title:"Quick Estimate vs. Full Estimate",
+    icon:"🚀",
+    content:`<b>Quick Estimate</b> is for when you're at someone's door and need to give them a number fast. Fill in the name, address, job type, and price — that's it. The legal pages and scope of work get added automatically. You're done in under a minute.
+<b>Full Estimate</b> is for when you need to customize. You can edit the scope line by line, choose which legal pages to include, set up a custom payment schedule, and add materials. Use Full Estimate when the job is complicated or the homeowner wants to see details.
+<b>Tip:</b> Start with Quick Estimate. If the homeowner wants more detail, switch to Full Estimate — everything you already filled in carries over.`
+  },
+  {
+    id:"amend",
+    title:"How to Change a Saved Estimate",
+    icon:"✏️",
+    content:`Go to the <b>Dashboard</b>. Find the estimate you want to change. Click anywhere on that row to open it.
+The estimate opens in Full Estimate mode so you can access all the steps. Make your changes — update the price, edit the scope, change the client info, whatever you need.
+When you're done, click <b>Save</b>. The estimate saves under the same contract number and gets marked as <b>Revised</b> so you know it changed.
+<b>Tip:</b> You can also update the job status right from the dashboard without opening the estimate. Just click the colored status button on the row and pick the new status.`
+  },
+  {
+    id:"sync",
+    title:"What ☁ and 📱 Mean",
+    icon:"☁",
+    content:`Every estimate row on the dashboard shows a small icon next to the contract number.
+<b>☁ (cloud)</b> means the estimate is saved to Google Sheets and is safe even if you lose your phone or switch devices. This is what you want.
+<b>📱 (phone)</b> means the estimate is only saved on this device right now. It's not backed up to the cloud yet. This usually happens when you don't have internet when you save.
+If you see 📱 estimates, tap the <b>Sync</b> button at the top of the dashboard to push them to the cloud. Do this any time you get back on a good Wi-Fi connection.`
+  },
+  {
+    id:"duplicate",
+    title:"How to Duplicate an Estimate",
+    icon:"⧉",
+    content:`Duplicating makes a copy of an estimate so you can reuse it for a different job without starting from scratch. It's useful when you're doing the same type of work for multiple homes in the same neighborhood.
+On the <b>Dashboard</b>, find the estimate you want to copy. Click the <b>⧉ Duplicate</b> button on that row. The estimate opens as a new one — same scope, same job type, same price — but with a blank contract number.
+Update the client name and address, then click <b>Save</b>. A new contract number gets created automatically.
+<b>Important:</b> Duplicating does not change the original. The original stays exactly as it was.`
+  },
+  {
+    id:"insurance",
+    title:"Insurance Claim Jobs",
+    icon:"⚡",
+    content:`When a job is being paid by a homeowner's insurance, turn on the <b>Insurance Job</b> toggle in Step 1 of the Full Estimate.
+This adds a section where you can enter the insurance company name, claim number, adjuster name, ACV (what the insurer approved), RCV (the full replacement cost), deductible, and more.
+Once you fill those in, the estimate automatically calculates:
+• <b>Expected insurance check</b> — ACV minus the deductible
+• <b>Supplement target</b> — the gap between RCV and ACV that you may need to recover
+• <b>Client out-of-pocket</b> — what the homeowner owes directly
+All of this prints on the estimate so the homeowner can see exactly how the numbers work.`
+  },
+  {
+    id:"signature",
+    title:"Capturing a Signature",
+    icon:"✍️",
+    content:`After you build an estimate and click <b>Save & Preview</b>, you'll see a button that says <b>✍ Capture Signature</b>.
+Tap it. A signature box opens. Hand the phone or tablet to the homeowner and have them sign with their finger. When they're done, tap <b>Save Signature</b>.
+Their signature now appears on the printed estimate in the signature line. You can then print, download as a PDF, or email it to them — all with their signature already on it.
+If you need to get a new signature (wrong person, mistake), tap <b>✍ Re-Sign</b> and do it again.`
+  },
+  {
+    id:"email",
+    title:"Emailing an Estimate to the Homeowner",
+    icon:"✉️",
+    content:`On the preview screen, tap <b>✉ Email to Client</b>. A small box opens. Type the homeowner's email address, then tap <b>Open Email App</b>.
+Your email app opens with everything already filled in — the subject line, the estimate details, the contract number, and the payment schedule. All you have to do is tap <b>Send</b>.
+<b>Note:</b> Right now the email opens your email app and you send it manually. A future update will send it automatically without that extra step.`
+  },
+  {
+    id:"invoice",
+    title:"Billing Invoice vs. Estimate",
+    icon:"🧾",
+    content:`These are two different documents used at different times.
+<b>Estimate</b> — Given to the homeowner <i>before</i> the job starts. It shows what you're going to do and what it will cost. It has the full scope of work, legal pages, warranty, and signature line.
+<b>Billing Invoice</b> — Sent to the homeowner <i>after</i> the job is done (or for a deposit). It shows what was done and what they owe. It's a clean, simple document — just the description of services and the total.
+To create a billing invoice, tap the <b>Invoice</b> tab at the top. You can load a saved estimate to auto-fill the client info and line items, or start from scratch.`
+  },
+  {
+    id:"status",
+    title:"Job Status Labels",
+    icon:"🏷",
+    content:`Status labels help you track where every job stands. You can update a job's status from the dashboard without opening the estimate — just tap the colored status button on the row.
+<b>Pending</b> — Estimate sent. Waiting for the homeowner to decide.
+<b>Approved</b> — Homeowner said yes. Job is confirmed.
+<b>Scheduled</b> — Job has a start date.
+<b>In Progress</b> — Work is happening right now.
+<b>Invoiced</b> — Bill has been sent. Waiting for payment.
+<b>Paid</b> — Payment received. Job is closed. The invoice will show a green PAID stamp when you reprint it.
+<b>Tip:</b> Keep your statuses updated. The Analytics section on the dashboard shows your full pipeline — how many jobs are at each stage and how much money is coming.`
+  }
+];
 
 class ErrorBoundary extends Component {
   constructor(props){super(props);this.state={hasError:false,error:null};}
