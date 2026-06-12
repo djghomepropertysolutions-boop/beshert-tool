@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, Component } from "react";
 
 // ── Embedded Logos ────────────────────────────────────────────────────────────
 const ROOFING_LOGO = "/beshert-logo.jpg";
@@ -593,7 +593,7 @@ function BillingInvoicePreview({roofingLogo,preparedBy,pm,bInvNum,bInvDate,bInvD
   );
 }
 
-export default function BeshertBuilder() {
+function BeshertBuilder() {
   // ── Mode & Step ──
   const [mode,         setMode]        = useState("proposal");
   const [step,         setStep]        = useState(1);
@@ -649,6 +649,21 @@ export default function BeshertBuilder() {
   },[]);
   const isMobile = windowWidth < 700;
   const isTablet = windowWidth < 960;
+
+  // ── V14 Notes, Toasts, Sync ──
+  const [notes,        setNotes]       = useState("");
+  const [toasts,       setToasts]      = useState([]);
+  const [unsyncedIds,  setUnsyncedIds] = useState(()=>{try{return JSON.parse(localStorage.getItem("brrg_unsynced")||"[]");}catch(e){return[];}});
+  const [isSyncing,    setIsSyncing]   = useState(false);
+  const [showAnalytics,setShowAnalytics]=useState(false);
+
+  const addToast = (msg, type="info") => {
+    const id = Date.now()+Math.random();
+    setToasts(p=>[...p,{id,msg,type}]);
+    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),4500);
+  };
+  const markUnsynced = (cnum) => { setUnsyncedIds(p=>{ const u=[...new Set([...p,cnum])]; localStorage.setItem("brrg_unsynced",JSON.stringify(u)); return u; }); };
+  const markSynced   = (cnum) => { setUnsyncedIds(p=>{ const u=p.filter(id=>id!==cnum); localStorage.setItem("brrg_unsynced",JSON.stringify(u)); return u; }); };
 
   // ── V13 Insurance + Email FROM ──
   const [isInsuranceJob, setIsInsuranceJob] = useState(false);
@@ -750,6 +765,7 @@ export default function BeshertBuilder() {
         setClientEmail(est.clientEmail||"");
         setMaterials(est.materials?.map((t,i)=>({id:i,text:t,on:true}))||[]);
         setSignature(est.signature||null);
+        setNotes(est.notes||"");
         setIsInsuranceJob(est.isInsuranceJob||false);
         setInsFields(est.insFields||{insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
         setIsEditing(true);
@@ -849,11 +865,20 @@ export default function BeshertBuilder() {
       finalPageIds:finalPages.filter(fp=>fp.on).map(fp=>fp.id),
       status,measurements,clientEmail,isInsuranceJob,insFields,
       materials:materials.map(m=>m.text),
-      signature:signature||null
+      signature:signature||null,
+      notes, cloudSynced:false
     };
     const res = await storage.save(est);
     setIsSaved(true);
-    setSaveStatus(res.local ? "saved-local" : "saved");
+    if(res.local) {
+      setSaveStatus("saved-local");
+      markUnsynced(cnum);
+      addToast("⚠ Saved to this device only — Google Sheets unreachable","warning");
+    } else {
+      setSaveStatus("saved");
+      markSynced(cnum);
+      addToast("✓ Estimate saved and synced","success");
+    }
     const newList = await storage.list();
     setRecentEsts(Array.isArray(newList)?newList:[]);
   };
@@ -885,6 +910,7 @@ export default function BeshertBuilder() {
     setClientEmail(est.clientEmail||"");
     setMaterials(est.materials?.map((t,i)=>({id:i,text:t,on:true}))||[]);
     setSignature(est.signature||null);
+    setNotes(est.notes||"");
     setIsInsuranceJob(est.isInsuranceJob||false);
     setInsFields(est.insFields||{insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     setIsEditing(true);
@@ -942,7 +968,7 @@ export default function BeshertBuilder() {
     setStatus("Pending"); setMeasurements({squares:"",pitch:"4/12",layers:"1",decking:"Good"});
     setMaterials([]); setNewMaterialText(""); setSignature(null); setClientEmail("");
     setValidationErrors([]);
-    setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
+    setNotes(""); setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     localStorage.removeItem(DRAFT_KEY);
   };
 
@@ -984,9 +1010,9 @@ export default function BeshertBuilder() {
 
   useEffect(()=>{
     if(!client.name&&!totalPrice)return;
-    try{const draft={client,lastName,houseNum,camLink,jobType,paymentSplit,paymentStructure,customPayments,preparedBy,pm,docDate,totalPrice,priceDesc,optItems,additionalJobs,contractNumber,status,measurements,materials,clientEmail,scopeItems:scopeItems.map(s=>s.text),isInsuranceJob,insFields};localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));}catch(e){}
-  },[client,lastName,houseNum,jobType,totalPrice,scopeItems,status,measurements,materials,clientEmail,isInsuranceJob,insFields]);
-  const restoreDraft=()=>{try{const d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"{}");if(d.client)setClient(d.client);if(d.lastName)setLastName(d.lastName);if(d.houseNum)setHouseNum(d.houseNum);if(d.camLink)setCamLink(d.camLink);if(d.jobType){setJobType(d.jobType);setScopeItems(d.scopeItems?.length>0?d.scopeItems.map((t,i)=>({id:i,text:t,on:true})):JOBS[d.jobType].scope.map((t,i)=>({id:i,text:t,on:true})));}if(d.paymentSplit)setSplit(d.paymentSplit);if(d.paymentStructure)setPaymentStructure(d.paymentStructure);if(d.customPayments)setCustomPayments(d.customPayments);if(d.preparedBy)setPreparedBy(d.preparedBy);if(d.pm)setPm(d.pm);if(d.docDate)setDocDate(d.docDate);if(d.totalPrice)setTotalPrice(String(d.totalPrice));if(d.priceDesc)setPriceDesc(d.priceDesc);if(d.optItems)setOptItems(d.optItems);if(d.additionalJobs)setAdditionalJobs(d.additionalJobs);if(d.contractNumber)setContractNumber(d.contractNumber);if(d.status)setStatus(d.status);if(d.measurements)setMeasurements(d.measurements);if(d.materials)setMaterials(d.materials);if(d.clientEmail)setClientEmail(d.clientEmail);if(d.isInsuranceJob!==undefined)setIsInsuranceJob(d.isInsuranceJob);if(d.insFields)setInsFields(d.insFields);}catch(e){}setHasDraft(false);localStorage.removeItem(DRAFT_KEY);};
+    try{const draft={client,lastName,houseNum,camLink,jobType,paymentSplit,paymentStructure,customPayments,preparedBy,pm,docDate,totalPrice,priceDesc,optItems,additionalJobs,contractNumber,status,measurements,materials,clientEmail,scopeItems:scopeItems.map(s=>s.text),isInsuranceJob,insFields,notes};localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));}catch(e){}
+  },[client,lastName,houseNum,jobType,totalPrice,scopeItems,status,measurements,materials,clientEmail,isInsuranceJob,insFields,notes]);
+  const restoreDraft=()=>{try{const d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"{}");if(d.client)setClient(d.client);if(d.lastName)setLastName(d.lastName);if(d.houseNum)setHouseNum(d.houseNum);if(d.camLink)setCamLink(d.camLink);if(d.jobType){setJobType(d.jobType);setScopeItems(d.scopeItems?.length>0?d.scopeItems.map((t,i)=>({id:i,text:t,on:true})):JOBS[d.jobType].scope.map((t,i)=>({id:i,text:t,on:true})));}if(d.paymentSplit)setSplit(d.paymentSplit);if(d.paymentStructure)setPaymentStructure(d.paymentStructure);if(d.customPayments)setCustomPayments(d.customPayments);if(d.preparedBy)setPreparedBy(d.preparedBy);if(d.pm)setPm(d.pm);if(d.docDate)setDocDate(d.docDate);if(d.totalPrice)setTotalPrice(String(d.totalPrice));if(d.priceDesc)setPriceDesc(d.priceDesc);if(d.optItems)setOptItems(d.optItems);if(d.additionalJobs)setAdditionalJobs(d.additionalJobs);if(d.contractNumber)setContractNumber(d.contractNumber);if(d.status)setStatus(d.status);if(d.measurements)setMeasurements(d.measurements);if(d.materials)setMaterials(d.materials);if(d.clientEmail)setClientEmail(d.clientEmail);if(d.isInsuranceJob!==undefined)setIsInsuranceJob(d.isInsuranceJob);if(d.insFields)setInsFields(d.insFields);if(d.notes)setNotes(d.notes);}catch(e){}setHasDraft(false);localStorage.removeItem(DRAFT_KEY);};
   const addMaterial=()=>{if(!newMaterialText.trim())return;saveMaterialLib(newMaterialText);setMaterialLibrary(loadMaterialLib());setMaterials(p=>[...p,{id:Date.now(),text:newMaterialText,on:true}]);setNewMaterialText("");};
   const toggleMaterial=id=>setMaterials(p=>p.map(m=>m.id===id?{...m,on:!m.on}:m));
   const editMaterial=(id,v)=>setMaterials(p=>p.map(m=>m.id===id?{...m,text:v}:m));
@@ -1067,6 +1093,45 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     setAppMode("form");
   };
 
+  const handleSyncUnsynced = async () => {
+    if(unsyncedIds.length===0){addToast("All estimates are synced ☁","success");return;}
+    setIsSyncing(true);
+    let synced=0, failed=0;
+    for(const cnum of [...unsyncedIds]) {
+      const est = await storage.get(cnum);
+      if(!est) { markSynced(cnum); continue; }
+      try {
+        const r = await fetch("/.netlify/functions/estimates",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...est,cloudSynced:true}),signal:AbortSignal.timeout(15000)});
+        if(r.ok) { markSynced(cnum); synced++; } else { failed++; }
+      } catch(e) { failed++; }
+    }
+    setIsSyncing(false);
+    if(synced>0&&failed===0) addToast(`✓ ${synced} estimate${synced>1?"s":""} synced to cloud`,"success");
+    else if(failed>0) addToast(`⚠ ${synced} synced, ${failed} failed — check connection`,"warning");
+  };
+
+  const handleDuplicateEstimate = async (contractNum) => {
+    const est = await storage.get(contractNum);
+    if(!est){addToast("Could not load estimate","error");return;}
+    const jt = est.jobType||"tearoff";
+    setClient(est.client||{name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
+    setLastName(est.lastName||""); setHouseNum(est.houseNum||""); setCamLink(est.camLink||"");
+    setJobType(jt); setSplit(est.paymentSplit||"33/33/34"); setPaymentStructure(est.paymentStructure||"split");
+    setCustomPayments(est.customPayments||[{id:1,label:"Due Now",amount:""},{id:2,label:"Balance Due Upon Completion",amount:""}]);
+    setPreparedBy(est.preparedBy||DEFAULT_PREPARED_BY); setPm(est.pm||DEFAULT_PM);
+    setDocDate(today()); setTotalPrice(String(est.totalPrice||""));
+    setPriceDesc(est.priceDesc||""); setOptItems(est.optItems||[]);
+    setScopeItems((est.scopeItems||JOBS[jt].scope).map((t,i)=>({id:i,text:t,on:true})));
+    setAdditionalJobs(est.additionalJobs||[]);
+    setStatus("Pending"); setMeasurements(est.measurements||{squares:"",pitch:"4/12",layers:"1",decking:"Good"});
+    setMaterials(est.materials?.map((t,i)=>({id:i,text:t,on:true}))||[]);
+    setNotes(est.notes||""); setIsInsuranceJob(est.isInsuranceJob||false); setInsFields(est.insFields||{insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
+    setClientEmail(est.clientEmail||""); setSignature(null);
+    setContractNumber(""); setContractLink(""); setIsSaved(false); setSaveStatus(""); setIsEditing(false);
+    setStep(1); setShowPreview(false); setMode("proposal"); setAppMode("form");
+    addToast("📋 Estimate duplicated — fill in client details and save","info");
+  };
+
   const genBillingNum = () => {
     const yr=new Date().getFullYear();
     const key=`brrg_billing_inv_${yr}`;
@@ -1142,9 +1207,43 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           <div>
             <div style={{...S.card,marginBottom:16}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
-                <div><div style={{fontWeight:700,fontSize:18,color:PURPLE_DARK}}>📋 Estimates Dashboard</div><div style={{fontSize:12,color:"#888",marginTop:2}}>{dashboardData.length} estimate{dashboardData.length!==1?"s":""} saved</div></div>
-                <div style={{display:"flex",gap:10}}><button style={S.btn(HEADER_BG)} onClick={()=>{resetProposal();setAppMode("form");}}>+ New Estimate</button><button style={S.btn(PURPLE_DARK)} onClick={loadDashboard}>↻ Refresh</button></div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:18,color:PURPLE_DARK}}>📋 Estimates Dashboard</div>
+                  <div style={{fontSize:12,color:"#888",marginTop:2}}>{dashboardData.length} estimate{dashboardData.length!==1?"s":""} saved{unsyncedIds.length>0&&<span style={{color:"#e67e22",fontWeight:700}}> · {unsyncedIds.length} unsynced</span>}</div>
+                </div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {unsyncedIds.length>0&&<button style={S.btn(isSyncing?"#888":"#e67e22")} onClick={handleSyncUnsynced} disabled={isSyncing}>{isSyncing?"⏳ Syncing…":"☁ Sync "+unsyncedIds.length}</button>}
+                  <button style={S.btn(PURPLE_DARK)} onClick={()=>setShowAnalytics(p=>!p)}>{showAnalytics?"Hide":"📊"} Analytics</button>
+                  <button style={S.btn(HEADER_BG)} onClick={()=>{resetProposal();setAppMode("form");}}>+ New Estimate</button>
+                  <button style={S.btn(PURPLE_DARK)} onClick={loadDashboard}>↻ Refresh</button>
+                </div>
               </div>
+
+              {/* Analytics Panel */}
+              {showAnalytics && dashboardData.length>0 && (()=>{
+                const yr=new Date().getFullYear(), mo=new Date().getMonth();
+                const thisMonth=dashboardData.filter(e=>{const d=new Date(e.dateCreated||"");return d.getFullYear()===yr&&d.getMonth()===mo;});
+                const pipeline=dashboardData.filter(e=>!["Paid"].includes(e.status||"Pending")).reduce((s,e)=>s+(parseFloat(e.totalPrice)||0),0);
+                const avgVal=dashboardData.length?dashboardData.reduce((s,e)=>s+(parseFloat(e.totalPrice)||0),0)/dashboardData.length:0;
+                const statusCts=STATUS_OPTIONS.map(s=>({s,n:dashboardData.filter(e=>(e.status||"Pending")===s).length})).filter(x=>x.n>0);
+                const jobCts=Object.entries(dashboardData.reduce((acc,e)=>{if(e.jobType&&JOBS[e.jobType])acc[e.jobType]=(acc[e.jobType]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1]);
+                return (
+                  <div style={{marginTop:16,padding:16,background:PURPLE_LIGHT,borderRadius:8,border:`1px solid #d1c9e8`}}>
+                    <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:12}}>
+                      {[["Total Estimates",dashboardData.length],["This Month",thisMonth.length],["Pipeline Value",fmtAmt(pipeline)],["Avg Estimate",fmtAmt(avgVal)]].map(([lbl,val])=>(
+                        <div key={lbl} style={{flex:1,minWidth:120,background:WHITE,borderRadius:6,padding:"10px 14px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+                          <div style={{fontSize:10,color:"#888",textTransform:"uppercase",letterSpacing:1}}>{lbl}</div>
+                          <div style={{fontWeight:700,fontSize:16,color:NAVY,marginTop:3}}>{val}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
+                      {statusCts.map(({s,n})=><span key={s} style={{background:STATUS_COLORS[s]||"#888",color:"#fff",fontSize:11,fontWeight:700,padding:"2px 10px",borderRadius:12}}>{s}: {n}</span>)}
+                    </div>
+                    {jobCts.length>0&&<div style={{fontSize:12,color:"#666"}}>Top job: {JOBS[jobCts[0][0]]?.label} ({jobCts[0][1]})</div>}
+                  </div>
+                );
+              })()}
               <div style={{marginTop:16,marginBottom:4}}>
                 <input style={{...S.input,maxWidth:320}} placeholder="🔍 Search by name, contract #, address…" value={dashboardSearch} onChange={e=>setDashboardSearch(e.target.value)}/>
               </div>
@@ -1158,7 +1257,13 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                               const q=dashboardSearch.toLowerCase();
                               if(q&&![e.contractNumber,e.client?.name,e.client?.address].join(" ").toLowerCase().includes(q))return false;
                               return dashboardFilter==="All"||(e.status||"Pending")===dashboardFilter;
-                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{if(e.docType==="billing_invoice"){handleLoadBillingInvoice(e);}else{handleLoadForEdit(e.contractNumber);setMode("proposal");setAppMode("form");}}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>{e.contractNumber}</td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{e.docType==="billing_invoice"?"🧾 Billing Invoice":(JOBS[e.jobType]?.icon||"📋")+" "+(JOBS[e.jobType]?.label||"—")}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px"}} onClick={ev=>ev.stopPropagation()}>
+                            }).slice().reverse().map((e,i)=>(<tr key={e.contractNumber} style={{borderBottom:`1px solid ${PURPLE_LIGHT}`,background:i%2===0?"#fff":"#faf9fd",cursor:"pointer",transition:"background 0.15s"}} onClick={()=>{if(e.docType==="billing_invoice"){handleLoadBillingInvoice(e);}else{handleLoadForEdit(e.contractNumber);setMode("proposal");setAppMode("form");}}}><td style={{padding:"10px 14px",fontWeight:700,color:HEADER_BG,fontFamily:"monospace",fontSize:11,whiteSpace:"nowrap"}}>
+                                  {e.contractNumber}
+                                  {unsyncedIds.includes(e.contractNumber)
+                                    ? <span title="Local only" style={{marginLeft:6,fontSize:10}}>📱</span>
+                                    : <span title="Synced" style={{marginLeft:6,fontSize:10}}>☁</span>}
+                                </td><td style={{padding:"10px 14px",fontWeight:500}}>{e.client?.name||"—"}</td><td style={{padding:"10px 14px",color:"#666",whiteSpace:"nowrap"}}>{e.dateCreated||e.docDate||"—"}</td><td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{e.docType==="billing_invoice"?"🧾 Billing Invoice":(JOBS[e.jobType]?.icon||"📋")+" "+(JOBS[e.jobType]?.label||"—")}</td><td style={{padding:"10px 14px",fontWeight:700,color:NAVY,whiteSpace:"nowrap"}}>{e.totalPrice?fmtAmt(e.totalPrice):"—"}</td><td style={{padding:"8px 14px",whiteSpace:"nowrap"}} onClick={ev=>ev.stopPropagation()}>
+                                  {e.docType!=="billing_invoice"&&<button onClick={ev=>{ev.stopPropagation();handleDuplicateEstimate(e.contractNumber);}} style={{...S.btn(PURPLE_LIGHT,PURPLE_DARK),border:`1px solid #d1c9e8`,fontSize:10,padding:"3px 8px",marginRight:6}}>📋 Copy</button>}
                                   <select value={e.status||"Pending"} onChange={ev=>{ev.stopPropagation();handleUpdateStatus(e.contractNumber,ev.target.value);}} style={{background:STATUS_COLORS[e.status||"Pending"]||"#888",color:"#fff",border:"none",borderRadius:12,padding:"3px 9px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif"}}>
                                     {STATUS_OPTIONS.map(s=><option key={s} value={s} style={{background:"#fff",color:"#333"}}>{s}</option>)}
                                   </select>
@@ -1328,7 +1433,24 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                         <div><label style={S.label}>Depreciation ($)</label><input style={S.input} placeholder="Holdback" value={insFields.depreciation} onChange={e=>setInsFields(p=>({...p,depreciation:e.target.value}))}/></div>
                       </div>
                     </div>
+                    {/* Auto-calc */}
+                    {(insFields.acv||insFields.rcv||insFields.deductible) && (
+                      <div style={{marginTop:14,padding:"10px 14px",background:"#fffbe8",border:"1px solid #f0d080",borderRadius:6}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"#7a5800",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Auto-Calculated</div>
+                        <div style={{display:"flex",gap:20,flexWrap:"wrap",fontSize:12}}>
+                          {insFields.acv&&insFields.deductible&&<div><span style={{color:"#888"}}>Expected insurance check: </span><strong>{fmtAmt(Math.max(0,parseFloat(insFields.acv||0)-parseFloat(insFields.deductible||0)))}</strong></div>}
+                          {insFields.rcv&&insFields.acv&&<div><span style={{color:"#888"}}>Supplement target: </span><strong>{fmtAmt(Math.max(0,parseFloat(insFields.rcv||0)-parseFloat(insFields.acv||0)))}</strong></div>}
+                          {insFields.deductible&&<div><span style={{color:"#888"}}>Client out-of-pocket: </span><strong>{fmtAmt(parseFloat(insFields.deductible||0))}</strong></div>}
+                        </div>
+                      </div>
+                    )}
                   )}
+                </div>
+
+                {/* Internal Notes */}
+                <div style={S.card}>
+                  <div style={{fontWeight:700,fontSize:14,color:PURPLE_DARK,marginBottom:4}}>📝 Internal Notes <span style={{fontWeight:400,fontSize:11,color:"#888"}}>— not printed on estimate</span></div>
+                  <textarea style={{...S.input,height:80,resize:"vertical",fontFamily:"Georgia,serif"}} placeholder="e.g. Homeowner prefers calls after 3pm · Adjuster is difficult, document everything · Gate code 1234" value={notes} onChange={e=>setNotes(e.target.value)}/>
                 </div>
 
                 {validationErrors.length>0&&(<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:"12px 16px",marginBottom:8}}>{validationErrors.map((e,i)=><div key={i} style={{fontSize:12,color:"#c0392b"}}>⚠ {e}</div>)}</div>)}
@@ -1887,6 +2009,17 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
           </>
         )}
 
+        {/* Toast Notifications */}
+        <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,display:"flex",flexDirection:"column",gap:8,maxWidth:360,pointerEvents:"none"}}>
+          {toasts.map(t=>(
+            <div key={t.id} style={{background:t.type==="success"?"#27ae60":t.type==="error"?"#c0392b":t.type==="warning"?"#e67e22":HEADER_BG,color:"#fff",padding:"12px 16px",borderRadius:10,fontSize:13,fontWeight:600,boxShadow:"0 4px 16px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",gap:10,pointerEvents:"all"}}>
+              <span style={{flexShrink:0}}>{t.type==="success"?"✓":t.type==="error"?"✕":t.type==="warning"?"⚠":"ℹ"}</span>
+              <span style={{flex:1}}>{t.msg}</span>
+              <button onClick={()=>setToasts(p=>p.filter(x=>x.id!==t.id))} style={{background:"none",border:"none",color:"rgba(255,255,255,0.7)",cursor:"pointer",fontSize:16,flexShrink:0,pointerEvents:"all"}}>✕</button>
+            </div>
+          ))}
+        </div>
+
         {/* SIGNATURE PAD MODAL */}
         {showSigPad&&(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}><div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:500,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}><div style={{fontWeight:700,fontSize:16,color:PURPLE_DARK,marginBottom:4}}>✍ Client Signature</div><div style={{fontSize:12,color:"#888",marginBottom:14}}>Sign below using mouse or finger. Appears on the printed document.</div><canvas ref={sigCanvasRef} width={440} height={150} style={{border:`2px solid ${PURPLE_LIGHT}`,borderRadius:8,cursor:"crosshair",background:"#fafafa",display:"block",width:"100%",touchAction:"none"}} onMouseDown={sigStart} onMouseMove={sigMove} onMouseUp={sigEnd} onMouseLeave={sigEnd} onTouchStart={sigStart} onTouchMove={sigMove} onTouchEnd={sigEnd}/><div style={{display:"flex",gap:10,marginTop:14,justifyContent:"flex-end"}}><button style={S.btn("#888")} onClick={sigClear}>Clear</button><button style={S.btn("#888")} onClick={()=>setShowSigPad(false)}>Cancel</button><button style={S.btn(HEADER_BG)} onClick={sigCapture}>Save Signature</button></div></div></div>)}
 
@@ -1906,3 +2039,29 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     </div>
   );
 }
+
+class ErrorBoundary extends Component {
+  constructor(props){super(props);this.state={hasError:false,error:null};}
+  static getDerivedStateFromError(e){return{hasError:true,error:e};}
+  componentDidCatch(e,info){console.error("Beshert App Error:",e,info);}
+  render(){
+    if(this.state.hasError){
+      return(
+        <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f4f7",padding:24}}>
+          <div style={{background:"#fff",borderRadius:12,padding:40,maxWidth:480,textAlign:"center",boxShadow:"0 8px 32px rgba(0,0,0,0.1)"}}>
+            <div style={{fontSize:48,marginBottom:16}}>⚠️</div>
+            <div style={{fontWeight:700,fontSize:18,color:"#1a2744",marginBottom:8}}>Something went wrong</div>
+            <div style={{fontSize:13,color:"#666",marginBottom:24,lineHeight:1.6}}>
+              The app hit an unexpected error. Your saved data is safe — tap Reload to get back to work.
+            </div>
+            <button onClick={()=>{this.setState({hasError:false});window.location.reload();}} style={{background:"#8b7cb4",color:"#fff",border:"none",borderRadius:8,padding:"12px 28px",fontSize:14,fontWeight:700,cursor:"pointer"}}>↺ Reload App</button>
+            {this.state.error&&<div style={{marginTop:16,fontSize:11,color:"#999",fontFamily:"monospace"}}>Error: {this.state.error.message}</div>}
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function App(){return<ErrorBoundary><BeshertBuilder/></ErrorBoundary>;}
