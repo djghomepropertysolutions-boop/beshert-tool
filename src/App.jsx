@@ -257,7 +257,7 @@ function ContractBadge({contractNumber,isRevised}) {
 }
 
 // ── ProposalPreview (MODIFIED) ────────────────────────────────────────────────
-function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,preparedBy,pm,scopeItems,finalPages,totalPrice,priceDesc,optItems,paymentSplit,contractNumber,linkedContract,isRevised,additionalJobs,paymentStructure,customPayments,signature,signatureTimestamp,signatureIP,status,measurements,materials,isInsuranceJob,insFields}) {
+function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,preparedBy,pm,scopeItems,finalPages,totalPrice,priceDesc,optItems,paymentSplit,contractNumber,linkedContract,isRevised,additionalJobs,paymentStructure,customPayments,signature,signatureTimestamp,signatureIP,status,measurements,materials,isInsuranceJob,insFields,includeMeasurements}) {
   const addJobsTotal = (additionalJobs||[]).reduce((s,j)=>s+(parseFloat(String(j.price||"0").replace(/[^0-9.]/g,""))||0),0);
   const grandTotal   = totalPrice + addJobsTotal;
   const addonTotal   = (optItems||[]).filter(o=>o.includeInTotal&&parseFloat(o.price)>0).reduce((s,o)=>s+parseFloat(o.price),0);
@@ -313,7 +313,7 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
           </div>
         </div>
 
-        {measurements && (measurements.squares||measurements.pitch||measurements.layers||measurements.decking) && (
+        {isInsuranceJob && includeMeasurements && measurements && (measurements.squares||measurements.pitch||measurements.layers||measurements.decking) && (
           <div style={{background:PURPLE_LIGHT,padding:"12px 20px",borderBottom:`2px solid ${PURPLE_DARK}`,borderLeft:`5px solid ${PURPLE_DARK}`}}>
             <div style={{fontWeight:700,fontSize:11,color:PURPLE_DARK,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📐 Roof Measurements</div>
             <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
@@ -554,9 +554,9 @@ function ProposalPreview({roofingLogo,churchLogo,docDate,docType,client,job,prep
 // ═════════════════════ MAIN COMPONENT ════════════════════════════════════════
 function LOAPreview({roofingLogo,churchLogo,client,insFields,contractNumber,docDate,signature,signatureTimestamp,signatureIP}) {
   return (
-    <div id="loa-area" style={{maxWidth:820,margin:"0 auto",fontFamily:"Georgia,serif",fontSize:12.5,color:"#1a1a2a",background:"#fff",position:"relative"}}>
+    <div id="loa-print-wrap"><div id="loa-area" style={{maxWidth:820,margin:"0 auto",fontFamily:"Georgia,serif",fontSize:12.5,color:"#1a1a2a",background:"#fff",position:"relative"}}>
       <Watermark churchLogo={churchLogo}/>
-      <style>{`@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}#loa-area{max-width:100%;}}`}</style>
+      <style>{`@media print{body>*:not(#loa-print-wrap){display:none!important;}#loa-print-wrap{display:block!important;}#loa-area{max-width:100%;} body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}`}</style>
       {/* Header */}
       <div style={{background:"#1a2744",color:"#fff",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderRadius:"6px 6px 0 0"}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
@@ -656,15 +656,15 @@ function LOAPreview({roofingLogo,churchLogo,client,insFields,contractNumber,docD
       <div style={{background:"#1a2744",color:"#fff",padding:"7px 20px",fontSize:10,textAlign:"center",letterSpacing:1.5,borderRadius:"0 0 6px 6px"}}>
         ISSUED BY BESHERT, A QUALIFIED 501(C)(3) NONPROFIT ORGANIZATION · www.thebeshertgroup.com
       </div>
-    </div>
+    </div></div>
   );
 }
 
 function WorkAuthPreview({roofingLogo,churchLogo,client,job,contractNumber,docDate,preparedBy,totalPrice,paymentSplit,signature,signatureTimestamp,signatureIP,scopeItems}) {
   return (
-    <div id="work-auth-area" style={{maxWidth:820,margin:"0 auto",fontFamily:"Georgia,serif",fontSize:13,color:"#1a1a2a",background:"#fff",position:"relative"}}>
+    <div id="wa-print-wrap"><div id="work-auth-area" style={{maxWidth:820,margin:"0 auto",fontFamily:"Georgia,serif",fontSize:13,color:"#1a1a2a",background:"#fff",position:"relative"}}>
       <Watermark churchLogo={churchLogo}/>
-      <style>{`@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}#work-auth-area{max-width:100%;}}`}</style>
+      <style>{`@media print{body>*:not(#wa-print-wrap){display:none!important;}#wa-print-wrap{display:block!important;}#work-auth-area{max-width:100%;} body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}`}</style>
       {/* Header */}
       <div style={{background:"#1a2744",color:"#fff",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderRadius:"6px 6px 0 0"}}>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
@@ -740,7 +740,7 @@ function WorkAuthPreview({roofingLogo,churchLogo,client,job,contractNumber,docDa
       <div style={{background:"#1a2744",color:"#fff",padding:"7px 20px",fontSize:10,textAlign:"center",letterSpacing:1.5,borderRadius:"0 0 6px 6px"}}>
         ISSUED BY BESHERT, A QUALIFIED 501(C)(3) NONPROFIT ORGANIZATION · www.thebeshertgroup.com
       </div>
-    </div>
+    </div></div>
   );
 }
 
@@ -896,7 +896,8 @@ function BeshertBuilder() {
   const markSynced   = (cnum) => { setUnsyncedIds(p=>{ const u=p.filter(id=>id!==cnum); localStorage.setItem("brrg_unsynced",JSON.stringify(u)); return u; }); };
 
   // ── V13 Insurance + Email FROM ──
-  const [isInsuranceJob, setIsInsuranceJob] = useState(false);
+  const [isInsuranceJob,       setIsInsuranceJob]       = useState(false);
+  const [includeMeasurements, setIncludeMeasurements] = useState(false);
   const [insFields, setInsFields] = useState({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
   const [sendFromEmail, setSendFromEmail] = useState("beshert@thebeshertgroup.com");
   const [dashboardSearch, setDashboardSearch] = useState("");
@@ -1124,7 +1125,7 @@ function BeshertBuilder() {
       status,measurements,clientEmail,isInsuranceJob,insFields,
       materials:materials.map(m=>m.text),
       signature:signature||null, signatureTimestamp:signatureTimestamp||null, signatureIP:signatureIP||null,
-      notes, workAuthGenerated, loaGenerated, cloudSynced:false
+      notes, workAuthGenerated, loaGenerated, includeMeasurements, cloudSynced:false
     };
     const res = await storage.save(est);
     setIsSaved(true);
@@ -1173,6 +1174,7 @@ function BeshertBuilder() {
     setNotes(est.notes||"");
     setWorkAuthGenerated(est.workAuthGenerated||false);
     setLoaGenerated(est.loaGenerated||false);
+    setIncludeMeasurements(est.includeMeasurements||false);
     setIsInsuranceJob(est.isInsuranceJob||false);
     setInsFields(est.insFields||{insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     setIsEditing(true);
@@ -1230,7 +1232,7 @@ function BeshertBuilder() {
     setStatus("Pending"); setMeasurements({squares:"",pitch:"4/12",layers:"1",decking:"Good"});
     setMaterials([]); setNewMaterialText(""); setSignature(null); setSignatureTimestamp(null); setSignatureIP(null); setClientEmail("");
     setValidationErrors([]);
-    setNotes(""); setWorkAuthGenerated(false); setLoaGenerated(false); setProposalMode("quick"); setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
+    setNotes(""); setWorkAuthGenerated(false); setLoaGenerated(false); setIncludeMeasurements(false); setProposalMode("quick"); setIsInsuranceJob(false); setInsFields({insurer:"",claimNum:"",policyNum:"",adjuster:"",dateOfLoss:"",deductible:"",acv:"",rcv:"",depreciation:"",supplementNum:""});
     localStorage.removeItem(DRAFT_KEY);
   };
 
@@ -1462,7 +1464,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     contractNumber, linkedContract:"", isRevised:isEditing&&isSaved,
     additionalJobs, paymentStructure, customPayments,
     signature, signatureTimestamp, signatureIP, status, measurements, materials,
-    isInsuranceJob, insFields
+    isInsuranceJob, insFields, includeMeasurements
   };
 
   return (
@@ -1845,7 +1847,13 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
                       </div>
                       {(insFields.acv||insFields.rcv||insFields.deductible) && (
                         <div style={{marginTop:14,padding:"10px 14px",background:"#fffbe8",border:"1px solid #f0d080",borderRadius:6}}>
-                          <div style={{fontSize:11,fontWeight:700,color:"#7a5800",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Auto-Calculated</div>
+                    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12,padding:"10px 14px",background:"#fffbe8",borderRadius:6,border:"1px solid #f0d080"}}>
+                      <input type="checkbox" id="inclMeas" checked={includeMeasurements} onChange={e=>setIncludeMeasurements(e.target.checked)} style={{width:16,height:16,cursor:"pointer",accentColor:"#8b7cb4"}}/>
+                      <label htmlFor="inclMeas" style={{fontSize:12,color:"#7a5800",cursor:"pointer",lineHeight:1.5}}>
+                        <strong>Include roof measurements on this estimate</strong> — prints measurements for the adjuster. Off by default.
+                      </label>
+                    </div>
+                                              <div style={{fontSize:11,fontWeight:700,color:"#7a5800",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Auto-Calculated</div>
                           <div style={{display:"flex",gap:20,flexWrap:"wrap",fontSize:12}}>
                             {insFields.acv&&insFields.deductible&&<div><span style={{color:"#888"}}>Expected insurance check: </span><strong>{fmtAmt(Math.max(0,parseFloat(insFields.acv||0)-parseFloat(insFields.deductible||0)))}</strong></div>}
                             {insFields.rcv&&insFields.acv&&<div><span style={{color:"#888"}}>Supplement target: </span><strong>{fmtAmt(Math.max(0,parseFloat(insFields.rcv||0)-parseFloat(insFields.acv||0)))}</strong></div>}
@@ -2644,7 +2652,9 @@ Once you fill those in, the estimate automatically calculates:
 • <b>Expected insurance check</b> — ACV minus the deductible
 • <b>Supplement target</b> — the gap between RCV and ACV that you may need to recover
 • <b>Client out-of-pocket</b> — what the homeowner owes directly
-All of this prints on the estimate so the homeowner can see exactly how the numbers work.`
+All of this prints on the estimate so the homeowner can see exactly how the numbers work.
+
+<b>Roof Measurements on Insurance Estimates:</b> Inside the Insurance section, there is a checkbox: "Include roof measurements on this estimate." It is off by default. Turn it on when you want the adjuster to see the measurements printed on the estimate — such as squares, pitch, and layers.`
   },
   {
     id:"signature",
@@ -2658,7 +2668,9 @@ The tool automatically records the <b>date, time, and IP address</b> when the si
 
 Once signed, the Step 1 card turns green with a ✅ confirmation. Then use <b>Step 2 — Document Actions</b> to print, download, or email.
 
-If you need a fresh signature, tap <b>Re-Sign</b> at any time.`
+If you need a fresh signature, tap <b>Re-Sign</b> at any time.
+
+<b>After signing:</b> If the job is Approved or Scheduled, a gold banner appears: "Work Authorization not yet complete." For insurance jobs, an orange banner appears for the Letter of Authorization. These banners stay visible until both the signature is captured AND the document is generated — tap <b>Generate Now</b> on each banner when ready.`
   },
   {
     id:"email",
