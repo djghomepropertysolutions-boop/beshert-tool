@@ -112,11 +112,11 @@ const JOBS = {
     duration:"Approximately 3–5 working days (weather permitting). Start date to be scheduled upon material delivery and permit approval.",
     warranty:["10-Year Workmanship/Labor Warranty (Contractor)","10-Year Standard System Warranty","Optional Extended Manufacturer Warranty (15 Years): Available upon request"],
     scope:["Stage job to meet OSHA regulations and supply permits.","Inspect existing roof deck condition prior to installation.","Install new starter shingles along all eaves.","Install ice and water shield 3 feet up from all gutters, valleys, and protrusions.","Install synthetic roofing underlayment with cap nails.","Install 30-year dimensional shingles over existing layer.","Install new ridge cap and ridge vent.","Re-flash all penetrations, soil stack boots (neoprene), and protrusions.","Install counter flashing, step flashing, aprons, and splash guards.","Clean up and haul away all debris.","General liability, contractor bond, and city registration enclosed."]},
-  tearoff:{label:"Tear-Off",icon:"🏗️",color:"#c0392b",defaultSplit:"33/33/34",
+  tearoff:{label:"Tear-Off",icon:"🏗️",color:"#c0392b",defaultSplit:"50/50",
     duration:"Approximately 7–10 working days (weather permitting). Start date to be scheduled upon material delivery and permit approval.",
     warranty:["12-Year Workmanship/Labor Warranty (Contractor)","10-Year Manufacturer Material Warranty (Standard System Warranty)","Optional Extended Manufacturer Warranty (15–20 Years): Available upon request"],
     scope:["Stage job to meet OSHA regulations and supply permits.","Tear off roof down to deck.","Replace any damaged decking as needed; billed separately at $4.50 per sq. ft.","Install synthetic roofing underlayment with cap nails.","Install shingle valleys. Optional: Install metal valleys (additional cost).","Install ice and water shield 3 feet up from all gutters, valleys, and protrusions.","Install 30-year dimensional shingles.","Install starter shingles and bleeders.","Install counter flashing, step flashing, aprons, and splash guards.","Install ridge vent.","Clean up and haul away all debris.","Provide on-site Safety Coordinator, Project Manager, and sidewalk/traffic protection.","Install soil stack boots (neoprene).","Any flat roof areas will be roofed with SBS modified granulated material.","General liability, contractor bond, and city registration enclosed."]},
-  commercial:{label:"Commercial TPO/EPDM",icon:"🏢",color:"#27ae60",defaultSplit:"33/33/34",
+  commercial:{label:"Commercial TPO/EPDM",icon:"🏢",color:"#27ae60",defaultSplit:"50/50",
     duration:"Approximately 10–15 working days (weather permitting). Start date to be scheduled upon material delivery and permit approval.",
     warranty:["12-Year Workmanship/Labor Warranty (Contractor)","15-Year NDL Manufacturer System Warranty","Optional Extended Manufacturer Warranty (20 Years): Available upon request"],
     scope:["Stage job to meet OSHA regulations and supply permits.","Remove existing roofing membrane and insulation down to structural deck.","Inspect and replace damaged decking or insulation as needed; billed separately.","Install tapered ISO insulation board for positive drainage.","Install TPO/EPDM membrane (60-mil standard).","Heat-weld/adhere all field seams per manufacturer specifications.","Flash and seal all penetrations, HVAC curbs, drains, and perimeter edges.","Install metal edge termination, coping, and perimeter detail.","Install walkway pads at all roof access points.","Pressure test all seams and penetrations prior to completion.","Clean up and haul away all debris.","Provide on-site Safety Coordinator and Project Manager.","General liability, contractor bond, and city registration enclosed."]},
@@ -765,7 +765,8 @@ function BillingInvoicePreview({roofingLogo,preparedBy,pm,bInvNum,bInvDate,bInvD
   const subtotal = bInvLines.reduce((sum,l)=>sum+(parseFloat(String(l.amt).replace(/[^0-9.]/g,""))||0),0);
   const fmtA = n => "$"+((parseFloat(String(n).replace(/[^0-9.]/g,""))||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}));
   return (
-    <div id="print-area" style={{fontFamily:"Georgia,serif",maxWidth:780,margin:"0 auto",background:"#fff",position:"relative",fontSize:13,border:"1px solid #e2e8f0"}}>
+   <div id="binv-print-wrap"><div id="binv-area" style={{fontFamily:"Georgia,serif",maxWidth:780,margin:"0 auto",background:"#fff",position:"relative",fontSize:13,border:"1px solid #e2e8f0"}}>
+      <style>{`@media print{body>*:not(#binv-print-wrap){display:none!important;}#binv-print-wrap{display:block!important;}#binv-area{max-width:100%;border:none;} body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}`}</style>
       {bInvStatus==="Paid"&&(<div style={{position:"absolute",top:0,left:0,right:0,bottom:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",zIndex:200,overflow:"hidden"}}><div style={{border:"7px solid rgba(21,156,89,0.65)",color:"rgba(21,156,89,0.65)",fontSize:80,fontWeight:900,transform:"rotate(-32deg)",letterSpacing:6,padding:"8px 18px",borderRadius:10,lineHeight:1}}>PAID</div></div>)}
       <div style={{textAlign:"center",padding:"24px 20px 16px",borderBottom:"3px solid #1a2744"}}>
         {roofingLogo&&<img src={roofingLogo} alt="Beshert" style={{height:80,objectFit:"contain",display:"block",margin:"0 auto 10px"}}/>}
@@ -807,11 +808,12 @@ function BillingInvoicePreview({roofingLogo,preparedBy,pm,bInvNum,bInvDate,bInvD
       <div style={{padding:"14px 24px",borderBottom:"1px solid #e2e8f0",fontSize:12,lineHeight:1.8}}><div><strong>Payment Terms:</strong> {bInvTerms}</div><div><strong>Accepted Payment Methods:</strong> {bInvMethods}</div></div>
       <div style={{padding:"14px 24px",fontSize:12,color:"#444",lineHeight:1.7,borderBottom:"1px solid #e2e8f0"}}>Thank you for your business and prompt payment. Please include the invoice number with all payments for proper credit.</div>
       <div style={{textAlign:"center",padding:"16px 24px",borderTop:"3px solid #1a2744"}}><div style={{fontWeight:700,fontSize:14,color:"#1a2744"}}>The Beshert Group</div><div style={{fontSize:12,color:"#888",marginTop:3,letterSpacing:1}}>Excellence. Integrity. Commitment.</div></div>
-    </div>
+    </div></div>
   );
 }
 
 function BeshertBuilder() {
+  );
   // ── Mode & Step ──
   const [mode,         setMode]        = useState("proposal");
   const [step,         setStep]        = useState(1);
@@ -820,7 +822,7 @@ function BeshertBuilder() {
 
   // ── Proposal State ──
   const [jobType,      setJobType]     = useState("tearoff");
-  const [paymentSplit, setSplit]       = useState("33/33/34");
+  const [paymentSplit, setSplit]       = useState("50/50");
   const [client,       setClient]      = useState({name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
   const [lastName,     setLastName]    = useState("");
   const [houseNum,     setHouseNum]    = useState("");
@@ -1217,7 +1219,7 @@ function BeshertBuilder() {
 
   const resetProposal = () => {
     setStep(1); setShowPreview(false); setDocType("estimate");
-    setJobType("tearoff"); setSplit("33/33/34");
+    setJobType("tearoff"); setSplit("50/50");
     setPaymentStructure("split");
     setCustomPayments([{id:1,label:"Due Now",amount:""},{id:2,label:"Balance Due Upon Completion",amount:""}]);
     setClient({name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
@@ -1396,7 +1398,7 @@ beshert@thebeshertgroup.com  |  www.thebeshertgroup.com`);
     const jt = est.jobType||"tearoff";
     setClient(est.client||{name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
     setLastName(est.lastName||""); setHouseNum(est.houseNum||""); setCamLink(est.camLink||"");
-    setJobType(jt); setSplit(est.paymentSplit||"33/33/34"); setPaymentStructure(est.paymentStructure||"split");
+    setJobType(jt); setSplit(est.paymentSplit||"50/50"); setPaymentStructure(est.paymentStructure||"split");
     setCustomPayments(est.customPayments||[{id:1,label:"Due Now",amount:""},{id:2,label:"Balance Due Upon Completion",amount:""}]);
     setPreparedBy(est.preparedBy||DEFAULT_PREPARED_BY); setPm(est.pm||DEFAULT_PM);
     setDocDate(today()); setTotalPrice(String(est.totalPrice||""));
