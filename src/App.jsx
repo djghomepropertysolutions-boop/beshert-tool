@@ -813,7 +813,6 @@ function BillingInvoicePreview({roofingLogo,preparedBy,pm,bInvNum,bInvDate,bInvD
 }
 
 function BeshertBuilder() {
-  );
   // ── Mode & Step ──
   const [mode,         setMode]        = useState("proposal");
   const [step,         setStep]        = useState(1);
@@ -988,7 +987,7 @@ function BeshertBuilder() {
         setHouseNum(est.houseNum||"");
         setCamLink(est.camLink||"");
         setJobType(jt);
-        setSplit(est.paymentSplit||"33/33/34");
+        setSplit(est.paymentSplit||"50/50");
         setPreparedBy(est.preparedBy||DEFAULT_PREPARED_BY);
         setPm(est.pm||DEFAULT_PM);
         setDocDate(est.docDate||today());
@@ -1154,7 +1153,7 @@ function BeshertBuilder() {
     setHouseNum(est.houseNum||"");
     setCamLink(est.camLink||"");
     setJobType(jt);
-    setSplit(est.paymentSplit||"33/33/34");
+    setSplit(est.paymentSplit||"50/50");
     setPaymentStructure(est.paymentStructure||"split");
     setCustomPayments(est.customPayments||[{id:1,label:"Due Now",amount:""},{id:2,label:"Balance Due Upon Completion",amount:""}]);
     setPreparedBy(est.preparedBy||DEFAULT_PREPARED_BY);
@@ -1202,7 +1201,7 @@ function BeshertBuilder() {
     if(!est){setLoadError("Contract not found. Check the number and try again."); return;}
     setClient(est.client||{name:"",title:"",company:"",address:"",city:"Cleveland",state:"OH",zip:"",phone:"",email:""});
     setJobType(est.jobType||"tearoff");
-    setSplit(est.paymentSplit||"33/33/34");
+    setSplit(est.paymentSplit||"50/50");
     setPaymentStructure(est.paymentStructure||"split");
     setCustomPayments(est.customPayments||[{id:1,label:"Due Now",amount:""},{id:2,label:"Balance Due Upon Completion",amount:""}]);
     setPreparedBy(est.preparedBy||DEFAULT_PREPARED_BY);
